@@ -20,3 +20,10 @@ public func sortedNewestFirst(_ items: [Screenshot]) -> [Screenshot] {
 public func newScreenshots(previousIDs: Set<String>, current: [Screenshot]) -> [Screenshot] {
     sortedNewestFirst(current.filter { !previousIDs.contains($0.id) })
 }
+
+/// The newest `limit` screenshots, newest first. Caps how many tiles the grid
+/// ever holds so work stays bounded no matter how many files are on disk.
+public func mostRecent(_ items: [Screenshot], limit: Int) -> [Screenshot] {
+    guard limit > 0 else { return [] }
+    return Array(sortedNewestFirst(items).prefix(limit))
+}

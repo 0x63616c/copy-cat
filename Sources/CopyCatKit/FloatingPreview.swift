@@ -16,7 +16,8 @@ struct FloatingPreview: View {
     var body: some View {
         if let shot = screenshot {
             VStack(alignment: .leading, spacing: 8) {
-                ScreenshotImage(url: shot.url, contentMode: .fit)
+                ScreenshotImage(url: shot.url, contentMode: .fit,
+                                maxPixel: Int(PreviewMetrics.imageWidth * 2))
                     .frame(width: PreviewMetrics.imageWidth, height: PreviewMetrics.imageHeight)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 

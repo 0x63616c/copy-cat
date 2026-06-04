@@ -29,7 +29,7 @@ struct GridView: View {
     }
 
     private func tile(_ shot: Screenshot) -> some View {
-        ScreenshotImage(url: shot.url, contentMode: .fill)
+        ScreenshotImage(url: shot.url, contentMode: .fill, maxPixel: Int(PopoverMetrics.tile * 3))
             .frame(width: PopoverMetrics.tile, height: PopoverMetrics.tile)
             .clipped()
             .clipShape(RoundedRectangle(cornerRadius: 8))

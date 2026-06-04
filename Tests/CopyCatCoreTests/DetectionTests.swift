@@ -32,3 +32,18 @@ private func shot(_ path: String, _ t: TimeInterval) -> Screenshot {
     let fresh = newScreenshots(previousIDs: ["/a", "/b"], current: [shot("/a", 1), shot("/b", 2)])
     #expect(fresh.isEmpty)
 }
+
+@Test func mostRecentCapsToNewestN() {
+    let items = (0..<10).map { shot("/\($0)", TimeInterval($0)) }
+    let top3 = mostRecent(items, limit: 3)
+    #expect(top3.map(\.url.lastPathComponent) == ["9", "8", "7"])
+}
+
+@Test func mostRecentReturnsAllWhenUnderLimit() {
+    let items = [shot("/a", 1), shot("/b", 2)]
+    #expect(mostRecent(items, limit: 50).count == 2)
+}
+
+@Test func mostRecentZeroLimitIsEmpty() {
+    #expect(mostRecent([shot("/a", 1)], limit: 0).isEmpty)
+}
