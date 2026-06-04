@@ -3,14 +3,18 @@
 # Triggered by a launchd LaunchAgent (WatchPaths) whenever the folder changes.
 # Keeps the on-disk file (historical record) AND puts the image on the clipboard.
 
-WATCH_DIR="${HOME}/Screenshots"
+# Watch wherever macOS is actually told to save screenshots, so this never drifts
+# from the real setting. Falls back to ~/Screenshots if unset.
+WATCH_DIR="$(defaults read com.apple.screencapture location 2>/dev/null || echo "${HOME}/Screenshots")"
+WATCH_DIR="${WATCH_DIR/#\~/$HOME}"; WATCH_DIR="${WATCH_DIR%/}"
+
 STATE_FILE="${HOME}/.local/state/screenshot-clipboard.last"
 LOG="${HOME}/.local/state/screenshot-clipboard.log"
 mkdir -p "$(dirname "$STATE_FILE")"
 
 log() { echo "[$(date '+%H:%M:%S')] $*" >> "$LOG"; }
 
-log "RUN: agent invoked"
+log "RUN: agent invoked (watching $WATCH_DIR)"
 
 # Newest png/jpg by modification time (handles default macOS screenshot names).
 newest="$(/bin/ls -t "$WATCH_DIR"/*.png "$WATCH_DIR"/*.jpg "$WATCH_DIR"/*.jpeg 2>/dev/null | head -n1 || true)"
