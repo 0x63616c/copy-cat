@@ -12,3 +12,5 @@ macOS only lets you pick one. copy-cat bridges it with a launchd agent that watc
 ```
 
 Test: Cmd+Shift+4, grab a region, then Cmd+V.
+
+> Disables the floating screenshot thumbnail (it delays writing the file to disk, which lagged the clipboard copy). `uninstall.sh` turns it back on.

@@ -24,6 +24,9 @@ chmod +x "$SCRIPT_DST"
 echo "==> Pointing macOS screenshots at $WATCH_DIR (and back to file mode)"
 defaults write com.apple.screencapture target file
 defaults write com.apple.screencapture location "$WATCH_DIR"
+# Disable the floating thumbnail: it delays writing the file to disk (so the
+# clipboard copy lags) and adds the ~5s preview. Off = instant save + instant copy.
+defaults write com.apple.screencapture show-thumbnail -bool false
 killall SystemUIServer 2>/dev/null || true
 
 echo "==> Writing LaunchAgent -> $PLIST"

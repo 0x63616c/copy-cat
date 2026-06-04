@@ -15,6 +15,10 @@ rm -f "${HOME}/.local/bin/screenshot-to-clipboard.sh"
 rm -f "${HOME}/.local/state/screenshot-clipboard.last"
 rm -f "${HOME}/.local/state/screenshot-clipboard.log"
 
+echo "==> Re-enabling the screenshot thumbnail preview"
+defaults write com.apple.screencapture show-thumbnail -bool true
+killall SystemUIServer 2>/dev/null || true
+
 echo "==> Restoring clipboard-only screenshots (optional default)"
 echo "    Run this if you want clipboard-only again:"
 echo "      defaults write com.apple.screencapture target clipboard && killall SystemUIServer"
