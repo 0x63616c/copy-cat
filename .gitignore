@@ -1,5 +1,11 @@
 .DS_Store
 
+# Swift build artifacts
+.build/
+*.app
+*.zip
+DerivedData/
+
 # Beads / Dolt files (added by bd init)
 .dolt/
 *.db

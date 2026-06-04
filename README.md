@@ -1,30 +1,47 @@
 # copy-cat
 
-macOS screenshots that go **both** places at once: **saved** to a folder (historical record) **and** **copied** to the clipboard.
+A macOS menu bar app that auto-copies every new screenshot to the clipboard and
+gives you a quick-access grid of recent screenshots. The file still saves to disk.
 
-macOS only lets you pick one. copy-cat bridges it with a launchd agent that watches the folder and copies each new screenshot to the clipboard. No app, no extra permissions, no rebound shortcuts.
-
-## Install (one line, any Mac)
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/0x63616c/copy-cat/main/install.sh | bash
-```
-
-Or from a clone:
+## Build
 
 ```bash
-./install.sh     # set up
-./uninstall.sh   # revert (leaves your screenshots alone)
+swift build            # debug build
+swift test             # run the CopyCatCore + CopyCatKit test suites
+./scripts/bundle.sh    # produce CopyCat.app (menu bar agent, no Dock icon)
+open CopyCat.app
 ```
 
-Test: Cmd+Shift+4, grab a region, then Cmd+V.
+## Distribute (Developer ID)
 
-## Notes
+```bash
+export SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)"
+export NOTARY_PROFILE="copy-cat-notary"
+./scripts/sign-notarize.sh
+```
 
-- **The installer detects where your screenshots already save** (`defaults read com.apple.screencapture location`) instead of guessing:
-  - Already outside the protected zone (e.g. `~/Pictures/Screenshots`) → watched as-is, nothing moved.
-  - A dedicated folder in a protected zone (e.g. `~/Desktop/Screenshots`) → migrated to `~/Screenshots` with a symlink left behind so it still shows on your Desktop.
-  - The bare Desktop (macOS default) → future screenshots repointed to `~/Screenshots`; existing Desktop files untouched.
-- **Why it can't stay on the Desktop:** Desktop/Documents/Downloads are TCC-protected. A launchd background agent is denied read access (`Operation not permitted`) without Full Disk Access, which isn't portable. `~/Screenshots` is outside that zone. The helper reads the live `location` setting at runtime, so it always watches wherever screenshots actually go.
-- Disables the floating screenshot thumbnail (it delays writing the file to disk, which lagged the clipboard copy). `uninstall.sh` turns it back on.
-- Agent activity is logged to `~/.local/state/screenshot-clipboard.log` for debugging.
+## How it works
+
+- Watches your screenshot folder with `NSMetadataQuery`, identifying screenshots
+  by the Spotlight `kMDItemIsScreenCapture` flag (filename fallback if indexing
+  is off).
+- On each new screenshot, copies the image to the clipboard (if enabled).
+- Reads — never relocates — screenshots where macOS already saves them.
+- App state lives in `~/Library/Application Support/copy-cat/`.
+
+## Popover
+
+Clicking the black-cat menu bar icon opens a popover: preview on the left,
+square-tile grid of recent screenshots on the right (newest top-left). Click a
+tile to copy it. The cog opens settings (copy-on-screenshot toggle, save
+location, grid size). Recovery states handle "not saving to disk" and "no folder
+access".
+
+## Architecture
+
+- `CopyCatCore` — pure logic, no AppKit, fully unit-tested.
+- `CopyCatKit` — AppKit/SwiftUI coordinator + views (`AppController` is TDD'd via fakes).
+- `CopyCat` — executable shim (`runApp()`).
+
+See `SPEC.md` for the full product spec and
+`docs/superpowers/plans/2026-06-04-copy-cat-menu-bar-app.md` for the build plan.
