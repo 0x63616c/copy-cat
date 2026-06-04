@@ -4,39 +4,43 @@ import CopyCatCore
 struct GridView: View {
     let screenshots: [Screenshot]
     let columns: Int
-    let maxRows: Int
-    let tileSize: CGFloat
-    let spacing: CGFloat
     let onHover: (Screenshot?) -> Void
     let onClick: (Screenshot) -> Void
-
-    private var layout: GridGeometry {
-        gridLayout(itemCount: screenshots.count, columns: columns, maxRows: maxRows)
-    }
+    let onReveal: (Screenshot) -> Void
+    let onCopyPath: (Screenshot) -> Void
 
     private var gridColumns: [GridItem] {
-        Array(repeating: GridItem(.fixed(tileSize), spacing: spacing, alignment: .topLeading),
-              count: layout.columns)
+        Array(
+            repeating: GridItem(.fixed(PopoverMetrics.tile), spacing: PopoverMetrics.gap, alignment: .topLeading),
+            count: max(1, columns)
+        )
     }
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: layout.needsScroll) {
-            LazyVGrid(columns: gridColumns, alignment: .leading, spacing: spacing) {
+        ScrollView(.vertical) {
+            LazyVGrid(columns: gridColumns, alignment: .leading, spacing: PopoverMetrics.gap) {
                 ForEach(screenshots) { shot in
-                    ScreenshotImage(url: shot.url, contentMode: .fill)
-                        .frame(width: tileSize, height: tileSize)
-                        .clipped()
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .contentShape(Rectangle())
-                        .onHover { inside in onHover(inside ? shot : nil) }
-                        .onTapGesture { onClick(shot) }
+                    tile(shot)
                 }
             }
-            .padding(spacing)
+            .padding(PopoverMetrics.gap)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .frame(
-            width: CGFloat(layout.columns) * tileSize + CGFloat(layout.columns + 1) * spacing,
-            height: CGFloat(layout.visibleRows) * tileSize + CGFloat(layout.visibleRows + 1) * spacing
-        )
+    }
+
+    private func tile(_ shot: Screenshot) -> some View {
+        ScreenshotImage(url: shot.url, contentMode: .fill)
+            .frame(width: PopoverMetrics.tile, height: PopoverMetrics.tile)
+            .clipped()
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .contentShape(RoundedRectangle(cornerRadius: 8))
+            .onHover { inside in onHover(inside ? shot : nil) }
+            .onTapGesture { onClick(shot) }
+            .contextMenu {
+                Button("Copy image") { onClick(shot) }
+                Button("Open in Finder") { onReveal(shot) }
+                Button("Copy path") { onCopyPath(shot) }
+            }
+            .help("Click to copy")
     }
 }

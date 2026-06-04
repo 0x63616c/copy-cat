@@ -4,12 +4,12 @@ import CopyCatCore
 
 struct PopoverRootView: View {
     @EnvironmentObject var controller: AppController
-    @State private var hovered: Screenshot?
     @State private var showSettings = false
 
     var body: some View {
         VStack(spacing: 0) {
             header
+            Divider()
             if controller.status.showNotSavingBanner {
                 NotSavingBanner(
                     onEnable: { controller.enableFileTarget() },
@@ -17,10 +17,11 @@ struct PopoverRootView: View {
             }
             content
         }
-        .frame(width: 720, height: 460)
         .sheet(isPresented: $showSettings) {
             SettingsView(isPresented: $showSettings).environmentObject(controller)
         }
+        // Clear the floating preview if the cursor leaves the popover entirely.
+        .onHover { inside in if !inside { controller.setHoveredPreview(nil) } }
     }
 
     private var header: some View {
@@ -29,9 +30,14 @@ struct PopoverRootView: View {
             Spacer()
             Button { showSettings = true } label: {
                 Image(systemName: "gearshape")
-            }.buttonStyle(.borderless)
+                    .imageScale(.large)
+            }
+            .buttonStyle(.borderless)
+            .help("Settings")
         }
-        .padding(.horizontal, 12).padding(.vertical, 8)
+        .padding(.horizontal, 16)
+        .padding(.top, 14)
+        .padding(.bottom, 10)
     }
 
     @ViewBuilder private var content: some View {
@@ -44,22 +50,14 @@ struct PopoverRootView: View {
         case .empty:
             EmptyStateView()
         case .normal:
-            HStack(spacing: 0) {
-                PreviewPane(
-                    screenshot: previewTarget(hovered: hovered, newest: controller.screenshots.first),
-                    onReveal: { controller.revealInFinder($0) },
-                    onCopyPath: { controller.copyPath($0) },
-                    onCopyImage: { controller.copy($0) })
-                Divider()
-                GridView(
-                    screenshots: controller.screenshots,
-                    columns: controller.settings.gridColumns,
-                    maxRows: controller.settings.gridRows,
-                    tileSize: 84, spacing: 8,
-                    onHover: { hovered = $0 },
-                    onClick: { controller.copy($0) })
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            }
+            GridView(
+                screenshots: controller.screenshots,
+                columns: controller.settings.gridColumns,
+                onHover: { controller.setHoveredPreview($0) },
+                onClick: { controller.copy($0) },
+                onReveal: { controller.revealInFinder($0) },
+                onCopyPath: { controller.copyPath($0) })
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
     }
 

@@ -8,8 +8,13 @@ public final class AppController: ObservableObject {
         hasAccess: true, savingToDisk: true, screenshotCount: 0)
     @Published public var settings: AppSettings
 
+    /// The tile currently hovered, shown as a floating preview. `nil` = no preview.
+    @Published public private(set) var hoveredPreview: Screenshot?
+
     /// Invoked on the main actor whenever `status` is recomputed (badge sync).
     public var onStatusChange: (() -> Void)?
+    /// Invoked on the main actor when the hovered tile changes (floating preview).
+    public var onHoverChange: ((Screenshot?) -> Void)?
 
     private let store: SettingsStore
     private let clipboard: Clipboard
@@ -83,6 +88,13 @@ public final class AppController: ObservableObject {
     // MARK: User actions
 
     public func copy(_ shot: Screenshot) { clipboard.copyImage(at: shot.url) }
+
+    /// Sets the hovered tile and notifies the floating-preview presenter.
+    public func setHoveredPreview(_ shot: Screenshot?) {
+        guard hoveredPreview != shot else { return }
+        hoveredPreview = shot
+        onHoverChange?(shot)
+    }
 
     public func updateSettings(_ newSettings: AppSettings) {
         let old = settings
