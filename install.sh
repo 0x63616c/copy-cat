@@ -1,13 +1,21 @@
 #!/bin/bash
 # copy-cat installer.
-# macOS screenshots -> saved to ~/Desktop/Screenshots (historical record)
+# macOS screenshots -> saved to ~/Screenshots (historical record, aliased on the Desktop)
 #                   -> AND copied to the clipboard automatically.
 # Portable across machines: no third-party app, no extra permissions.
+#
+# Why ~/Screenshots and not ~/Desktop/Screenshots?
+# The Desktop is a TCC-protected folder. A launchd background agent is denied
+# read access to it ("Operation not permitted") unless granted Full Disk Access,
+# which isn't portable and can't be granted cleanly to a shell script. ~/Screenshots
+# lives outside the protected zone, so the agent can read new screenshots. We drop a
+# symlink at ~/Desktop/Screenshots so it still shows up on your Desktop.
 
 set -euo pipefail
 
 LABEL="com.0x63616c.screenshot-clipboard"
-WATCH_DIR="${HOME}/Desktop/Screenshots"
+WATCH_DIR="${HOME}/Screenshots"
+DESKTOP_LINK="${HOME}/Desktop/Screenshots"
 BIN_DIR="${HOME}/.local/bin"
 SCRIPT_DST="${BIN_DIR}/screenshot-to-clipboard.sh"
 PLIST="${HOME}/Library/LaunchAgents/${LABEL}.plist"
@@ -16,6 +24,20 @@ SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "==> Creating directories"
 mkdir -p "$WATCH_DIR" "$BIN_DIR" "$STATE_DIR" "${HOME}/Library/LaunchAgents"
+
+# Migrate an existing real ~/Desktop/Screenshots folder into ~/Screenshots, then
+# replace it with a symlink. Skipped if it's already a symlink or doesn't exist.
+if [ -d "$DESKTOP_LINK" ] && [ ! -L "$DESKTOP_LINK" ]; then
+  echo "==> Migrating existing $DESKTOP_LINK -> $WATCH_DIR"
+  mv "$DESKTOP_LINK"/.[!.]* "$WATCH_DIR"/ 2>/dev/null || true
+  mv "$DESKTOP_LINK"/* "$WATCH_DIR"/ 2>/dev/null || true
+  rm -f "$DESKTOP_LINK/.DS_Store"
+  rmdir "$DESKTOP_LINK" 2>/dev/null || true
+fi
+if [ ! -e "$DESKTOP_LINK" ]; then
+  ln -s "$WATCH_DIR" "$DESKTOP_LINK"
+  echo "==> Symlinked $DESKTOP_LINK -> $WATCH_DIR"
+fi
 
 echo "==> Installing helper script -> $SCRIPT_DST"
 cp "${SRC_DIR}/screenshot-to-clipboard.sh" "$SCRIPT_DST"
@@ -61,5 +83,6 @@ launchctl bootout "gui/$(id -u)/${LABEL}" 2>/dev/null || true
 launchctl bootstrap "gui/$(id -u)" "$PLIST"
 
 echo
-echo "Done. Screenshots now save to $WATCH_DIR and land on your clipboard."
+echo "Done. Screenshots save to $WATCH_DIR (shown on your Desktop as 'Screenshots')"
+echo "and land on your clipboard automatically."
 echo "Test it: press Cmd+Shift+4, grab a region, then Cmd+V somewhere."

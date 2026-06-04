@@ -23,4 +23,4 @@ echo "==> Restoring clipboard-only screenshots (optional default)"
 echo "    Run this if you want clipboard-only again:"
 echo "      defaults write com.apple.screencapture target clipboard && killall SystemUIServer"
 echo
-echo "Done. Your screenshots in ~/Desktop/Screenshots were left untouched."
+echo "Done. Your screenshots in ~/Screenshots (and the Desktop alias) were left untouched."
