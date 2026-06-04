@@ -4,10 +4,16 @@ macOS screenshots that go **both** places at once: **saved** to a folder (histor
 
 macOS only lets you pick one. copy-cat bridges it with a launchd agent that watches the folder and copies each new screenshot to the clipboard. No app, no extra permissions, no rebound shortcuts.
 
-## Use
+## Install (one line, any Mac)
 
 ```bash
-./install.sh     # set up (run on each laptop)
+curl -fsSL https://raw.githubusercontent.com/0x63616c/copy-cat/main/install.sh | bash
+```
+
+Or from a clone:
+
+```bash
+./install.sh     # set up
 ./uninstall.sh   # revert (leaves your screenshots alone)
 ```
 

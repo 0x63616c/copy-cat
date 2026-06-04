@@ -20,7 +20,7 @@ BIN_DIR="${HOME}/.local/bin"
 SCRIPT_DST="${BIN_DIR}/screenshot-to-clipboard.sh"
 PLIST="${HOME}/Library/LaunchAgents/${LABEL}.plist"
 STATE_DIR="${HOME}/.local/state"
-SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || echo /nonexistent)"
 
 echo "==> Creating directories"
 mkdir -p "$WATCH_DIR" "$BIN_DIR" "$STATE_DIR" "${HOME}/Library/LaunchAgents"
@@ -40,7 +40,12 @@ if [ ! -e "$DESKTOP_LINK" ]; then
 fi
 
 echo "==> Installing helper script -> $SCRIPT_DST"
-cp "${SRC_DIR}/screenshot-to-clipboard.sh" "$SCRIPT_DST"
+RAW_BASE="https://raw.githubusercontent.com/0x63616c/copy-cat/main"
+if [ -f "${SRC_DIR}/screenshot-to-clipboard.sh" ]; then
+  cp "${SRC_DIR}/screenshot-to-clipboard.sh" "$SCRIPT_DST"   # local clone
+else
+  curl -fsSL "${RAW_BASE}/screenshot-to-clipboard.sh" -o "$SCRIPT_DST"   # piped via curl|bash
+fi
 chmod +x "$SCRIPT_DST"
 
 echo "==> Pointing macOS screenshots at $WATCH_DIR (and back to file mode)"
