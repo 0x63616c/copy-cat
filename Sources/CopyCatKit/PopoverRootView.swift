@@ -19,6 +19,9 @@ struct PopoverRootView: View {
                 content
             }
         }
+        // Darken the popover's default material so the grid reads on a deeper,
+        // charcoal background instead of the lighter system gray.
+        .background(Color.black.opacity(0.28))
         // Clear the floating preview if the cursor leaves the popover entirely.
         .onHover { inside in if !inside { controller.setHoveredPreview(nil) } }
     }
