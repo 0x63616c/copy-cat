@@ -45,7 +45,7 @@ struct PopoverRootView: View {
     }
 
     private var gridHeader: some View {
-        HStack(spacing: 8) {
+        headerBar {
             Text("All Screenshots").font(.cc(Typo.headline, weight: .bold))
             if controller.screenshots.count > 0 {
                 Text("\(controller.screenshots.count)")
@@ -58,41 +58,44 @@ struct PopoverRootView: View {
             }
             Spacer()
             if !controller.showingSettings {
-                Button { controller.openSettings() } label: {
-                    Image(systemName: "gearshape")
-                        .imageScale(.medium)
-                        .foregroundStyle(.secondary)
-                        .padding(9)
-                        .background(Color.primary.opacity(0.08), in: Circle())
-                }
-                .buttonStyle(.plain)
-                .help("Settings")
+                circleButton("gearshape", help: "Settings") { controller.openSettings() }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 14)
-        .padding(.bottom, 10)
+    }
+
+    /// One popover header row: a leading title (+ trailing control), pinned to a
+    /// fixed height so the grid and settings titles line up exactly. Without the
+    /// fixed height each header sizes to its own content (the grid header loses
+    /// the gear button while Settings is open), which shifts the titles apart.
+    private func headerBar<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        HStack(spacing: 8) { content() }
+            .frame(height: PopoverMetrics.headerRow)
+            .padding(.horizontal, 16)
+            .padding(.top, 11)
+            .padding(.bottom, 9)
+    }
+
+    /// A circular, secondary-tinted icon button used in both header bars.
+    private func circleButton(_ symbol: String, help: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .imageScale(.medium)
+                .foregroundStyle(.secondary)
+                .padding(9)
+                .background(Color.primary.opacity(0.08), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .help(help)
     }
 
     /// Right side: the settings pane that slides in, with its own close button.
     private var settingsPane: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 8) {
+            headerBar {
                 Text("Settings").font(.cc(Typo.headline, weight: .bold))
                 Spacer()
-                Button { controller.closeSettings() } label: {
-                    Image(systemName: "xmark")
-                        .imageScale(.medium)
-                        .foregroundStyle(.secondary)
-                        .padding(9)
-                        .background(Color.primary.opacity(0.08), in: Circle())
-                }
-                .buttonStyle(.plain)
-                .help("Close settings")
+                circleButton("xmark", help: "Close settings") { controller.closeSettings() }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 14)
-            .padding(.bottom, 10)
             SettingsView()
         }
         .frame(maxHeight: .infinity, alignment: .top)

@@ -6,7 +6,11 @@ import CopyCatCore
 enum PopoverMetrics {
     static let tile: CGFloat = 88
     static let gap: CGFloat = 10
-    static let headerHeight: CGFloat = 52
+    /// Fixed height of the title-row content in each header bar (grid + settings),
+    /// so the two titles line up regardless of which trailing control is present.
+    static let headerRow: CGFloat = 34
+    /// Full header height = headerRow + the bar's top/bottom padding (11 + 9).
+    static let headerHeight: CGFloat = headerRow + 11 + 9
     static let bannerHeight: CGFloat = 60
     // Hug the fixed 4-column grid exactly (4 tiles + 5 gaps) so there is no
     // dead space between the last image and the scrollbar. The grid column is
