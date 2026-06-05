@@ -20,9 +20,16 @@ public final class AppController: ObservableObject {
     public var onStatusChange: (() -> Void)?
     /// Invoked on the main actor when the hovered tile changes (floating preview).
     public var onHoverChange: ((Screenshot?) -> Void)?
-    /// Invoked on the main actor when grid-affecting settings change, so the
-    /// shell can resize the live popover without a reopen.
+    /// Invoked on the main actor when navigation changes (settings open/close),
+    /// so the shell can resize the live popover without a reopen.
     public var onSettingsChange: (() -> Void)?
+    /// Invoked on the main actor when a view asks to pick the watch folder. The
+    /// AppKit shell owns this so it can pin the popover open across the modal
+    /// NSOpenPanel, then resume normal click-outside dismissal.
+    public var onChooseFolder: (() -> Void)?
+
+    /// Asks the shell to present the watch-folder picker.
+    public func requestChooseFolder() { onChooseFolder?() }
 
     /// Whether Settings is showing inline inside the popover (replacing the grid).
     /// Settings lives *in* the popover rather than a separate window so it stays
@@ -146,15 +153,12 @@ public final class AppController: ObservableObject {
 
     public func updateSettings(_ newSettings: AppSettings) {
         let old = settings
-        settings = newSettings.clamped()
+        settings = newSettings
         try? store.save(settings)
         if settings.saveLocationPath != old.saveLocationPath {
             detector?.update(folderPath: watchFolder)
         }
         refreshStatus()
-        if settings.gridColumns != old.gridColumns || settings.gridRows != old.gridRows {
-            onSettingsChange?()
-        }
     }
 
     public func enableFileTarget() { prefs.enableFileTarget(); refreshStatus() }

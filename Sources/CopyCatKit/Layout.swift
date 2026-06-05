@@ -8,13 +8,14 @@ enum PopoverMetrics {
     static let gap: CGFloat = 10
     static let headerHeight: CGFloat = 52
     static let bannerHeight: CGFloat = 60
-    // Hug the default 3-column grid exactly (3 tiles + 4 gaps) so there is no
-    // dead space between the last image and the scrollbar.
-    static let minWidth: CGFloat = 3 * tile + 4 * gap
+    // Hug the fixed 4-column grid exactly (4 tiles + 5 gaps) so there is no
+    // dead space between the last image and the scrollbar. The grid column is
+    // pinned to this width so opening Settings doesn't reflow it.
+    static let minWidth: CGFloat = 4 * tile + 5 * gap
     static let minHeight: CGFloat = 300
 
-    /// Settings slides in as a pane on the right. Wider than the grid column so
-    /// the grouped form (watch-folder path + button, stepper rows) isn't cramped.
+    /// Settings slides in as a pane on the right, matching the grid column width
+    /// so the popover is symmetric and the grouped form isn't cramped.
     static let settingsPaneWidth: CGFloat = 4 * tile + 5 * gap
     /// Minimum popover height while the settings pane is open, so the form fits.
     static let settingsMinHeight: CGFloat = 470

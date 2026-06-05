@@ -12,7 +12,7 @@ struct PopoverRootView: View {
                 Divider()
                 settingsPane
                     .frame(width: PopoverMetrics.settingsPaneWidth)
-                    .transition(.move(edge: .trailing))
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
         // +20% type across the whole popover: default-font Text/labels/controls
@@ -22,12 +22,14 @@ struct PopoverRootView: View {
         // The popover appearance (set on NSPopover) owns the dark material now,
         // so arrow and body match. No content-level overlay (which caused the
         // seam against the arrow).
-        .animation(.easeInOut(duration: 0.22), value: controller.showingSettings)
+        .animation(.smooth(duration: 0.32), value: controller.showingSettings)
         // Clear the floating preview if the cursor leaves the popover entirely.
         .onHover { inside in if !inside { controller.setHoveredPreview(nil) } }
     }
 
-    /// Left side: header + screenshot grid (or empty / no-access state).
+    /// Left side: header + screenshot grid (or empty / no-access state). Fixed to
+    /// the natural 4-column width so opening Settings doesn't reflow the grid —
+    /// the pane slides into the new space instead of the grid stretching first.
     private var gridColumn: some View {
         VStack(spacing: 0) {
             gridHeader
@@ -38,12 +40,22 @@ struct PopoverRootView: View {
             }
             content
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .frame(width: PopoverMetrics.minWidth)
+        .frame(maxHeight: .infinity, alignment: .top)
     }
 
     private var gridHeader: some View {
         HStack(spacing: 8) {
             Text("All Screenshots").font(.cc(Typo.headline, weight: .bold))
+            if controller.screenshots.count > 0 {
+                Text("\(controller.screenshots.count)")
+                    .font(.cc(Typo.subheadline, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 2)
+                    .background(Color.primary.opacity(0.08), in: Capsule())
+                    .contentTransition(.numericText())
+            }
             Spacer()
             if !controller.showingSettings {
                 Button { controller.openSettings() } label: {
@@ -98,7 +110,7 @@ struct PopoverRootView: View {
         case .normal:
             GridView(
                 screenshots: controller.screenshots,
-                columns: controller.settings.gridColumns,
+                columns: AppSettings.gridColumns,
                 justCopiedID: controller.justCopiedID,
                 onHover: { controller.setHoveredPreview($0) },
                 onClick: { controller.copy($0) },
@@ -109,12 +121,6 @@ struct PopoverRootView: View {
     }
 
     private func chooseFolder() {
-        let panel = NSOpenPanel()
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = false
-        panel.allowsMultipleSelection = false
-        if panel.runModal() == .OK, let url = panel.url {
-            controller.chooseFolder(url)
-        }
+        controller.requestChooseFolder()
     }
 }

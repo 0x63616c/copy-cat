@@ -6,34 +6,21 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var copyOnScreenshot: Bool
     /// Folder to watch. `nil` means "use the macOS screencapture location".
     public var saveLocationPath: String?
-    public var gridColumns: Int
-    public var gridRows: Int
 
-    public init(copyOnScreenshot: Bool, saveLocationPath: String?, gridColumns: Int, gridRows: Int) {
+    public init(copyOnScreenshot: Bool, saveLocationPath: String?) {
         self.copyOnScreenshot = copyOnScreenshot
         self.saveLocationPath = saveLocationPath
-        self.gridColumns = gridColumns
-        self.gridRows = gridRows
     }
 
     public static let defaults = AppSettings(
         copyOnScreenshot: true,
-        saveLocationPath: nil,
-        gridColumns: 3,
-        gridRows: 5
+        saveLocationPath: nil
     )
 
-    /// Smallest and largest grid dimension the popover supports (square range).
-    public static let minDimension = 3
-    public static let maxDimension = 10
-
-    /// Clamps grid dimensions to a usable range for the popover.
-    public func clamped() -> AppSettings {
-        var copy = self
-        copy.gridColumns = min(max(Self.minDimension, gridColumns), Self.maxDimension)
-        copy.gridRows = min(max(Self.minDimension, gridRows), Self.maxDimension)
-        return copy
-    }
+    /// The screenshot grid is a fixed 4×4: four columns, four visible rows
+    /// before it scrolls. Not user-configurable.
+    public static let gridColumns = 4
+    public static let gridRows = 4
 
     /// `~/Library/Application Support/copy-cat/config.json`
     public static func configURL() -> URL {
@@ -57,7 +44,7 @@ public struct SettingsStore: Sendable {
               let decoded = try? JSONDecoder().decode(AppSettings.self, from: data) else {
             return .defaults
         }
-        return decoded.clamped()
+        return decoded
     }
 
     public func save(_ settings: AppSettings) throws {
@@ -67,6 +54,6 @@ public struct SettingsStore: Sendable {
         )
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        try encoder.encode(settings.clamped()).write(to: url, options: .atomic)
+        try encoder.encode(settings).write(to: url, options: .atomic)
     }
 }

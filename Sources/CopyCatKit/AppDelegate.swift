@@ -8,6 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private let popover = NSPopover()
     private let controller = AppController()
     private let previewWC = PreviewWindowController()
+    private var escMonitor: Any?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         controller.start()
@@ -22,6 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         controller.onStatusChange = { [weak self] in self?.updateBadge() }
         controller.onHoverChange = { [weak self] shot in self?.updatePreview(shot) }
         controller.onSettingsChange = { [weak self] in self?.applyNavigation() }
+        controller.onChooseFolder = { [weak self] in self?.presentFolderPicker() }
 
         popover.behavior = .transient
         // Force a dark appearance so the popover's arrow and body share one
@@ -34,6 +36,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         popover.contentSize = popoverSize()
         popover.contentViewController = NSHostingController(
             rootView: PopoverRootView().environmentObject(controller))
+
+        // Esc closes Settings (back to the grid) when it's open, otherwise
+        // dismisses the popover entirely. A local monitor reaches the popover's
+        // key window where SwiftUI's own key handling is unreliable.
+        escMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self, self.popover.isShown, event.keyCode == 53 else { return event }
+            if self.controller.showingSettings {
+                self.controller.closeSettings()
+            } else {
+                self.popover.performClose(nil)
+            }
+            return nil
+        }
     }
 
     private func updateBadge() {
@@ -91,25 +106,59 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         }
     }
 
-    /// Reacts to a navigation/grid change: resizes the popover to fit the current
-    /// view and, while Settings is showing, pins the popover open
-    /// (`.applicationDefined`) so the folder picker doesn't dismiss it. Returns to
-    /// `.transient` for the grid so outside clicks dismiss as usual.
+    /// Reacts to a navigation change: resizes the popover to fit the current view.
+    /// The popover stays `.transient` whether or not Settings is open, so a click
+    /// outside always dismisses it. The folder picker is the one case that would
+    /// otherwise dismiss it, so `presentFolderPicker()` pins it across that modal.
     private func applyNavigation() {
-        popover.behavior = controller.showingSettings ? .applicationDefined : .transient
         guard popover.isShown else { return }
-        popover.animates = true
-        popover.contentSize = popoverSize()
+        let target = popoverSize()
+        if controller.showingSettings {
+            // Opening: grow the window instantly (the new space is just dark
+            // material) so SwiftUI can slide the pane into real estate that
+            // already exists — no AppKit/SwiftUI desync, no left-side gap.
+            popover.animates = false
+            popover.contentSize = target
+        } else {
+            // Closing: keep the window wide while SwiftUI slides the pane out,
+            // then collapse the empty space once the slide has finished.
+            popover.animates = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.paneSlide) { [weak self] in
+                guard let self, self.popover.isShown, !self.controller.showingSettings else { return }
+                self.popover.contentSize = self.popoverSize()
+            }
+        }
     }
+
+    /// Duration of the settings pane slide; kept in sync with the SwiftUI
+    /// `.animation(.smooth(duration:))` in `PopoverRootView`.
+    private static let paneSlide: TimeInterval = 0.32
 
     private func popoverSize() -> NSSize {
         let s = PopoverMetrics.size(
-            columns: controller.settings.gridColumns,
-            rows: controller.settings.gridRows,
+            columns: AppSettings.gridColumns,
+            rows: AppSettings.gridRows,
             count: controller.screenshots.count,
             banner: controller.status.showNotSavingBanner,
             settings: controller.showingSettings)
         return NSSize(width: s.width, height: s.height)
+    }
+
+    /// Presents the watch-folder picker. Pins the popover open across the modal
+    /// `NSOpenPanel` (which would otherwise resign key and dismiss a transient
+    /// popover), then restores normal click-outside dismissal.
+    private func presentFolderPicker() {
+        let previous = popover.behavior
+        popover.behavior = .applicationDefined
+        defer { popover.behavior = previous }
+
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        if panel.runModal() == .OK, let url = panel.url {
+            controller.chooseFolder(url)
+        }
     }
 
     @objc private func togglePopover(_ sender: NSStatusBarButton) {
@@ -120,6 +169,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             updateBadge()
             popover.contentSize = popoverSize()
             popover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)
+            // Activate the app and make the popover key so AppKit controls (the
+            // Toggle's NSSwitch) render in their active state immediately.
+            // Without this the switch first paints as a solid blue block and only
+            // corrects once focus changes.
+            NSApp.activate(ignoringOtherApps: true)
             popover.contentViewController?.view.window?.makeKey()
         }
     }

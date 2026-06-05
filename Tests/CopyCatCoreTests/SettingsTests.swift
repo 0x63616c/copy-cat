@@ -5,38 +5,31 @@ import Testing
 @Test func defaultsMatchSpec() {
     let d = AppSettings.defaults
     #expect(d.copyOnScreenshot == true)
-    #expect(d.gridColumns == 3)
-    #expect(d.gridRows == 5)
     #expect(d.saveLocationPath == nil)
+}
+
+@Test func gridIsFixedFourByFour() {
+    #expect(AppSettings.gridColumns == 4)
+    #expect(AppSettings.gridRows == 4)
 }
 
 @Test func settingsRoundTripThroughJSON() throws {
     var s = AppSettings.defaults
     s.copyOnScreenshot = false
-    s.gridColumns = 4
-    s.gridRows = 6
     s.saveLocationPath = "/Users/x/Pictures/Screenshots"
     let data = try JSONEncoder().encode(s)
     let back = try JSONDecoder().decode(AppSettings.self, from: data)
     #expect(back == s)
 }
 
-@Test func gridDimensionsClampToSaneRange() {
-    var low = AppSettings.defaults
-    low.gridColumns = 0
-    low.gridRows = 1
-    let clampedLow = low.clamped()
-    #expect(clampedLow.gridColumns == AppSettings.minDimension)
-    #expect(clampedLow.gridRows == AppSettings.minDimension)
-
-    var high = AppSettings.defaults
-    high.gridColumns = 99
-    high.gridRows = 99
-    let clampedHigh = high.clamped()
-    #expect(clampedHigh.gridColumns == AppSettings.maxDimension)
-    #expect(clampedHigh.gridRows == AppSettings.maxDimension)
-    #expect(AppSettings.minDimension == 3)
-    #expect(AppSettings.maxDimension == 10)
+/// Old configs carried gridColumns/gridRows keys; decoding must ignore them.
+@Test func decodingIgnoresLegacyGridKeys() throws {
+    let json = """
+    {"copyOnScreenshot": false, "gridColumns": 7, "gridRows": 9}
+    """.data(using: .utf8)!
+    let s = try JSONDecoder().decode(AppSettings.self, from: json)
+    #expect(s.copyOnScreenshot == false)
+    #expect(s.saveLocationPath == nil)
 }
 
 @Test func configURLLivesUnderApplicationSupport() {
@@ -51,7 +44,10 @@ import Testing
         .appendingPathComponent("config.json")
     let store = SettingsStore(url: tmp)
     var s = AppSettings.defaults
-    s.gridColumns = 4
+    s.copyOnScreenshot = false
+    s.saveLocationPath = "/tmp/shots"
     try store.save(s)
-    #expect(store.load().gridColumns == 4)
+    let loaded = store.load()
+    #expect(loaded.copyOnScreenshot == false)
+    #expect(loaded.saveLocationPath == "/tmp/shots")
 }
