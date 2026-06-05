@@ -8,27 +8,33 @@ private struct ItemBox: @unchecked Sendable {
     let items: [NSMetadataItem]
 }
 
-/// Live folder watcher built on Spotlight. Emits a capped, newest-first list on
+/// Live folder watcher built on Spotlight. Emits the full newest-first list on
 /// every change and reports a newly-arrived screenshot.
 ///
 /// `NSMetadataQuery` delivers notifications on the main run loop. Parsing the
 /// results (which can be thousands of files) is dispatched to a background queue
-/// so it never blocks the UI; only the small capped result is handed back to the
+/// so it never blocks the UI; only the finished result is handed back to the
 /// main actor.
+///
+/// The list is *not* capped: the grid is virtualized (`LazyVGrid` realizes only
+/// on-screen tiles) and the decoded-thumbnail cache is bounded independently, so
+/// the cost is set by what's visible, not by how many files exist. An optional
+/// `displayLimit` remains as a safety valve for pathological folders; `nil`
+/// (the default) means show every screenshot.
 @MainActor
 public final class ScreenshotDetector {
     public var onUpdate: (([Screenshot]) -> Void)?
     public var onNewScreenshots: (([Screenshot]) -> Void)?
 
     private let query = NSMetadataQuery()
-    private let displayLimit: Int
+    private let displayLimit: Int?
     private var folderPath: String
     /// Identity of the newest screenshot we've delivered, for O(1) new-detection.
     private var lastNewestID: String?
     /// Becomes true after the first gather so we don't "copy" a pre-existing shot.
     private var hasGathered = false
 
-    public init(folderPath: String, displayLimit: Int = 240) {
+    public init(folderPath: String, displayLimit: Int? = nil) {
         self.folderPath = folderPath
         self.displayLimit = displayLimit
         NotificationCenter.default.addObserver(
@@ -72,16 +78,18 @@ public final class ScreenshotDetector {
         let limit = displayLimit
 
         DispatchQueue.global(qos: .userInitiated).async {
-            let capped = mostRecent(Self.parse(box.items), limit: limit)
-            let newest = capped.first
+            let parsed = Self.parse(box.items)
+            // Spotlight pre-sorts newest-first, but re-sort to be order-independent.
+            let ordered = limit.map { mostRecent(parsed, limit: $0) } ?? sortedNewestFirst(parsed)
+            let newest = ordered.first
             Task { @MainActor [weak self] in
-                self?.deliver(capped: capped, newest: newest)
+                self?.deliver(ordered: ordered, newest: newest)
             }
         }
     }
 
-    private func deliver(capped: [Screenshot], newest: Screenshot?) {
-        onUpdate?(capped)
+    private func deliver(ordered: [Screenshot], newest: Screenshot?) {
+        onUpdate?(ordered)
         if let newest, newest.id != lastNewestID {
             if hasGathered { onNewScreenshots?([newest]) }
             lastNewestID = newest.id
