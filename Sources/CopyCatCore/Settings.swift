@@ -23,11 +23,15 @@ public struct AppSettings: Codable, Equatable, Sendable {
         gridRows: 5
     )
 
+    /// Smallest and largest grid dimension the popover supports (square range).
+    public static let minDimension = 3
+    public static let maxDimension = 10
+
     /// Clamps grid dimensions to a usable range for the popover.
     public func clamped() -> AppSettings {
         var copy = self
-        copy.gridColumns = min(max(1, gridColumns), 8)
-        copy.gridRows = min(max(1, gridRows), 12)
+        copy.gridColumns = min(max(Self.minDimension, gridColumns), Self.maxDimension)
+        copy.gridRows = min(max(Self.minDimension, gridRows), Self.maxDimension)
         return copy
     }
 

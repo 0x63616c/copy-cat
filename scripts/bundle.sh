@@ -15,5 +15,7 @@ rm -rf "$APP"
 mkdir -p "${APP}/Contents/MacOS" "${APP}/Contents/Resources"
 cp "$BIN" "${APP}/Contents/MacOS/${EXE_NAME}"
 cp "${ROOT}/Resources/Info.plist.template" "${APP}/Contents/Info.plist"
+cp "${ROOT}/Resources/AppIcon.icns" "${APP}/Contents/Resources/AppIcon.icns"
+cp "${ROOT}/Resources/menubar-cat.pdf" "${APP}/Contents/Resources/menubar-cat.pdf"
 
 echo "==> Built ${APP}"

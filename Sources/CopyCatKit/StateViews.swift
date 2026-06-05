@@ -38,7 +38,7 @@ struct NoAccessView: View {
         VStack(spacing: 14) {
             Image(systemName: "lock.shield").font(.largeTitle).foregroundStyle(.secondary)
             Text("Can't see your screenshots").font(.headline)
-            Text("copy-cat needs permission to read your screenshot folder.")
+            Text("CopyCat needs permission to read your screenshot folder.")
                 .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
             VStack(spacing: 8) {
                 Button("Choose folder…", action: onChooseFolder).buttonStyle(.borderedProminent)

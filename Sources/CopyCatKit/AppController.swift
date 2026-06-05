@@ -11,10 +11,23 @@ public final class AppController: ObservableObject {
     /// The tile currently hovered, shown as a floating preview. `nil` = no preview.
     @Published public private(set) var hoveredPreview: Screenshot?
 
+    /// The id of the tile that was just copied, used to flash a "Copied" overlay.
+    /// Cleared automatically a moment after the copy.
+    @Published public private(set) var justCopiedID: Screenshot.ID?
+    private var copyFlashTask: Task<Void, Never>?
+
     /// Invoked on the main actor whenever `status` is recomputed (badge sync).
     public var onStatusChange: (() -> Void)?
     /// Invoked on the main actor when the hovered tile changes (floating preview).
     public var onHoverChange: ((Screenshot?) -> Void)?
+    /// Invoked on the main actor when grid-affecting settings change, so the
+    /// shell can resize the live popover without a reopen.
+    public var onSettingsChange: (() -> Void)?
+
+    /// Whether Settings is showing inline inside the popover (replacing the grid).
+    /// Settings lives *in* the popover rather than a separate window so it stays
+    /// anchored to the menu bar and can't be dragged around.
+    @Published public private(set) var showingSettings = false
 
     private let store: SettingsStore
     private let clipboard: Clipboard
@@ -87,7 +100,36 @@ public final class AppController: ObservableObject {
 
     // MARK: User actions
 
-    public func copy(_ shot: Screenshot) { clipboard.copyImage(at: shot.url) }
+    public func copy(_ shot: Screenshot) {
+        clipboard.copyImage(at: shot.url)
+        flashCopied(shot.id)
+    }
+
+    /// Briefly marks `id` as just-copied so the grid can show a confirmation.
+    private func flashCopied(_ id: Screenshot.ID) {
+        justCopiedID = id
+        copyFlashTask?.cancel()
+        copyFlashTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 550_000_000)
+            guard !Task.isCancelled else { return }
+            self?.justCopiedID = nil
+        }
+    }
+
+    /// Shows Settings inline inside the popover.
+    public func openSettings() {
+        showingSettings = true
+        onSettingsChange?()
+    }
+
+    /// Returns from Settings to the screenshot grid.
+    public func closeSettings() {
+        showingSettings = false
+        onSettingsChange?()
+    }
+
+    /// Resets to the grid view (called when the popover dismisses).
+    public func resetNavigation() { showingSettings = false }
 
     /// Sets the hovered tile and notifies the floating-preview presenter.
     public func setHoveredPreview(_ shot: Screenshot?) {
@@ -104,6 +146,9 @@ public final class AppController: ObservableObject {
             detector?.update(folderPath: watchFolder)
         }
         refreshStatus()
+        if settings.gridColumns != old.gridColumns || settings.gridRows != old.gridRows {
+            onSettingsChange?()
+        }
     }
 
     public func enableFileTarget() { prefs.enableFileTarget(); refreshStatus() }

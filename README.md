@@ -12,6 +12,13 @@ swift test             # run the CopyCatCore + CopyCatKit test suites
 open CopyCat.app
 ```
 
+Dev loop — rebuild and relaunch the running menu bar app in one step:
+
+```bash
+./scripts/dev.sh           # debug build -> refresh bundle -> relaunch
+./scripts/dev.sh --release # same, with the release binary
+```
+
 ## Distribute (Developer ID)
 
 ```bash

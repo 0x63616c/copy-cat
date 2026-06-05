@@ -4,36 +4,49 @@ import CopyCatCore
 
 struct PopoverRootView: View {
     @EnvironmentObject var controller: AppController
-    @State private var showSettings = false
 
     var body: some View {
         VStack(spacing: 0) {
             header
-            Divider()
-            if controller.status.showNotSavingBanner {
-                NotSavingBanner(
-                    onEnable: { controller.enableFileTarget() },
-                    onDisableThumbnail: { controller.disableThumbnail() })
+            if controller.showingSettings {
+                SettingsView()
+            } else {
+                if controller.status.showNotSavingBanner {
+                    NotSavingBanner(
+                        onEnable: { controller.enableFileTarget() },
+                        onDisableThumbnail: { controller.disableThumbnail() })
+                }
+                content
             }
-            content
-        }
-        .sheet(isPresented: $showSettings) {
-            SettingsView(isPresented: $showSettings).environmentObject(controller)
         }
         // Clear the floating preview if the cursor leaves the popover entirely.
         .onHover { inside in if !inside { controller.setHoveredPreview(nil) } }
     }
 
     private var header: some View {
-        HStack {
-            Text("copy-cat").font(.headline)
-            Spacer()
-            Button { showSettings = true } label: {
-                Image(systemName: "gearshape")
-                    .imageScale(.large)
+        HStack(spacing: 8) {
+            if controller.showingSettings {
+                Button { controller.closeSettings() } label: {
+                    Image(systemName: "chevron.backward")
+                        .imageScale(.large)
+                }
+                .buttonStyle(.borderless)
+                .help("Back")
+                Text("Settings").font(.headline)
+                Spacer()
+            } else {
+                Text("All Screenshots").font(.system(size: 26, weight: .bold))
+                Spacer()
+                Button { controller.openSettings() } label: {
+                    Image(systemName: "gearshape")
+                        .imageScale(.medium)
+                        .foregroundStyle(.secondary)
+                        .padding(6)
+                        .background(Color.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+                }
+                .buttonStyle(.plain)
+                .help("Settings")
             }
-            .buttonStyle(.borderless)
-            .help("Settings")
         }
         .padding(.horizontal, 16)
         .padding(.top, 14)
@@ -53,6 +66,7 @@ struct PopoverRootView: View {
             GridView(
                 screenshots: controller.screenshots,
                 columns: controller.settings.gridColumns,
+                justCopiedID: controller.justCopiedID,
                 onHover: { controller.setHoveredPreview($0) },
                 onClick: { controller.copy($0) },
                 onReveal: { controller.revealInFinder($0) },

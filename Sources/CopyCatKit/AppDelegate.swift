@@ -21,6 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
         controller.onStatusChange = { [weak self] in self?.updateBadge() }
         controller.onHoverChange = { [weak self] shot in self?.updatePreview(shot) }
+        controller.onSettingsChange = { [weak self] in self?.applyNavigation() }
 
         popover.behavior = .transient
         popover.delegate = self
@@ -31,9 +32,49 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
     private func updateBadge() {
         guard let button = statusItem?.button else { return }
-        let name = badgeSymbolName(for: controller.status.content)
-        button.image = NSImage(systemSymbolName: name, accessibilityDescription: "copy-cat")
-        button.image?.isTemplate = true
+        // Folder-access warning keeps the SF Symbol triangle. The normal state uses the
+        // bundled cat silhouette as a template image (auto dark-in-light / white-in-dark),
+        // falling back to the `cat.fill` SF Symbol if the asset is missing (e.g. raw binary).
+        if controller.status.content == .noAccess {
+            let name = badgeSymbolName(for: controller.status.content)
+            button.image = NSImage(systemSymbolName: name, accessibilityDescription: "CopyCat: folder access needed")
+            button.image?.isTemplate = true
+        } else if let cat = Self.menuBarCatImage() {
+            button.image = cat
+        } else {
+            button.image = NSImage(systemSymbolName: "cat.fill", accessibilityDescription: "CopyCat")
+            button.image?.isTemplate = true
+        }
+    }
+
+    /// The cat silhouette template glyph for the menu bar, loaded from the app bundle.
+    ///
+    /// The source PDF carries ~18% of empty margin on every side, which makes the
+    /// silhouette render about half its intended size in the bar. We crop that margin
+    /// off and redraw the inner region to fill the full 18pt box.
+    private static func menuBarCatImage() -> NSImage? {
+        guard let url = Bundle.main.url(forResource: "menubar-cat", withExtension: "pdf"),
+              let source = NSImage(contentsOf: url) else { return nil }
+
+        let target = NSSize(width: 18, height: 18)
+        let inset: CGFloat = 0.18  // trim 18% off each side
+        let src = source.size
+        let cropRect = NSRect(
+            x: src.width * inset,
+            y: src.height * inset,
+            width: src.width * (1 - 2 * inset),
+            height: src.height * (1 - 2 * inset)
+        )
+
+        let cropped = NSImage(size: target)
+        cropped.lockFocus()
+        source.draw(in: NSRect(origin: .zero, size: target),
+                    from: cropRect,
+                    operation: .sourceOver,
+                    fraction: 1.0)
+        cropped.unlockFocus()
+        cropped.isTemplate = true
+        return cropped
     }
 
     private func updatePreview(_ shot: Screenshot?) {
@@ -44,7 +85,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         }
     }
 
+    /// Reacts to a navigation/grid change: resizes the popover to fit the current
+    /// view and, while Settings is showing, pins the popover open
+    /// (`.applicationDefined`) so the folder picker doesn't dismiss it. Returns to
+    /// `.transient` for the grid so outside clicks dismiss as usual.
+    private func applyNavigation() {
+        popover.behavior = controller.showingSettings ? .applicationDefined : .transient
+        guard popover.isShown else { return }
+        popover.animates = true
+        popover.contentSize = popoverSize()
+    }
+
     private func popoverSize() -> NSSize {
+        if controller.showingSettings { return PopoverMetrics.settingsSize }
         let s = PopoverMetrics.size(
             columns: controller.settings.gridColumns,
             rows: controller.settings.gridRows,
@@ -70,5 +123,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     func popoverDidClose(_ notification: Notification) {
         controller.setHoveredPreview(nil)
         previewWC.hide()
+        // Reopen to the grid next time, not stuck in Settings.
+        controller.resetNavigation()
     }
 }

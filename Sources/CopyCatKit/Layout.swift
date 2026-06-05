@@ -8,8 +8,13 @@ enum PopoverMetrics {
     static let gap: CGFloat = 10
     static let headerHeight: CGFloat = 52
     static let bannerHeight: CGFloat = 60
-    static let minWidth: CGFloat = 340
+    // Hug the default 3-column grid exactly (3 tiles + 4 gaps) so there is no
+    // dead space between the last image and the scrollbar.
+    static let minWidth: CGFloat = 3 * tile + 4 * gap
     static let minHeight: CGFloat = 300
+
+    /// Size the popover adopts while Settings is shown inline (replacing the grid).
+    static let settingsSize = CGSize(width: 360, height: 470)
 
     /// Width/height the popover should adopt for the current grid + state.
     static func size(columns: Int, rows: Int, count: Int, banner: Bool) -> CGSize {
@@ -23,11 +28,10 @@ enum PopoverMetrics {
     }
 }
 
-/// Floating preview tooltip dimensions — 2x the previous inline preview (was
-/// 320x240).
+/// Floating preview tooltip dimensions. The image shrink-wraps to the
+/// screenshot's real aspect ratio; `longestSide` caps its largest dimension.
 enum PreviewMetrics {
-    static let imageWidth: CGFloat = 640
-    static let imageHeight: CGFloat = 480
+    static let longestSide: CGFloat = 560
     static let padding: CGFloat = 14
     static let cornerRadius: CGFloat = 16
 }

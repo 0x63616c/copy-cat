@@ -22,12 +22,21 @@ import Testing
 }
 
 @Test func gridDimensionsClampToSaneRange() {
-    var s = AppSettings.defaults
-    s.gridColumns = 0
-    s.gridRows = 99
-    let clamped = s.clamped()
-    #expect(clamped.gridColumns >= 1)
-    #expect(clamped.gridRows <= 12)
+    var low = AppSettings.defaults
+    low.gridColumns = 0
+    low.gridRows = 1
+    let clampedLow = low.clamped()
+    #expect(clampedLow.gridColumns == AppSettings.minDimension)
+    #expect(clampedLow.gridRows == AppSettings.minDimension)
+
+    var high = AppSettings.defaults
+    high.gridColumns = 99
+    high.gridRows = 99
+    let clampedHigh = high.clamped()
+    #expect(clampedHigh.gridColumns == AppSettings.maxDimension)
+    #expect(clampedHigh.gridRows == AppSettings.maxDimension)
+    #expect(AppSettings.minDimension == 3)
+    #expect(AppSettings.maxDimension == 10)
 }
 
 @Test func configURLLivesUnderApplicationSupport() {
