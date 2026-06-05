@@ -112,27 +112,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     /// otherwise dismiss it, so `presentFolderPicker()` pins it across that modal.
     private func applyNavigation() {
         guard popover.isShown else { return }
-        let target = popoverSize()
         if controller.showingSettings {
-            // Opening: grow the window instantly (the new space is just dark
-            // material) so SwiftUI can slide the pane into real estate that
-            // already exists — no AppKit/SwiftUI desync, no left-side gap.
-            popover.animates = false
-            popover.contentSize = target
+            // Opening: let AppKit glide the window wider (not an instant snap)
+            // while SwiftUI slides the pane into the new space. The grid is
+            // pinned left, so the window grows rightward to make room.
+            popover.animates = true
+            popover.contentSize = popoverSize()
         } else {
             // Closing: keep the window wide while SwiftUI slides the pane out,
-            // then collapse the empty space once the slide has finished.
-            popover.animates = false
+            // then glide it back down to the grid-only size.
             DispatchQueue.main.asyncAfter(deadline: .now() + Self.paneSlide) { [weak self] in
                 guard let self, self.popover.isShown, !self.controller.showingSettings else { return }
+                self.popover.animates = true
                 self.popover.contentSize = self.popoverSize()
             }
         }
     }
 
     /// Duration of the settings pane slide; kept in sync with the SwiftUI
-    /// `.animation(.smooth(duration:))` in `PopoverRootView`.
-    private static let paneSlide: TimeInterval = 0.32
+    /// `.animation(.smooth(duration:))` in `PopoverRootView`. The SwiftUI side
+    /// is the slower, dominant motion (AppKit's window resize is quicker), which
+    /// is what makes the open/close feel like an unhurried glide.
+    private static let paneSlide: TimeInterval = 0.5
 
     private func popoverSize() -> NSSize {
         let s = PopoverMetrics.size(

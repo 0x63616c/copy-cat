@@ -22,7 +22,7 @@ struct PopoverRootView: View {
         // The popover appearance (set on NSPopover) owns the dark material now,
         // so arrow and body match. No content-level overlay (which caused the
         // seam against the arrow).
-        .animation(.smooth(duration: 0.32), value: controller.showingSettings)
+        .animation(.smooth(duration: 0.5), value: controller.showingSettings)
         // Clear the floating preview if the cursor leaves the popover entirely.
         .onHover { inside in if !inside { controller.setHoveredPreview(nil) } }
     }
@@ -63,7 +63,7 @@ struct PopoverRootView: View {
                         .imageScale(.medium)
                         .foregroundStyle(.secondary)
                         .padding(6)
-                        .background(Color.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+                        .background(Color.primary.opacity(0.08), in: Circle())
                 }
                 .buttonStyle(.plain)
                 .help("Settings")
@@ -85,7 +85,7 @@ struct PopoverRootView: View {
                         .imageScale(.medium)
                         .foregroundStyle(.secondary)
                         .padding(6)
-                        .background(Color.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+                        .background(Color.primary.opacity(0.08), in: Circle())
                 }
                 .buttonStyle(.plain)
                 .help("Close settings")

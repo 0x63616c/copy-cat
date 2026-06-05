@@ -30,6 +30,7 @@ struct SettingsView: View {
             Toggle(isOn: setting(\.copyOnScreenshot)) {
                 Label("Copy on screenshot", systemImage: "camera.viewfinder")
             }
+            .toggleStyle(PillToggleStyle())
         } header: {
             Text("Capture")
         } footer: {
@@ -69,5 +70,35 @@ struct SettingsView: View {
                 next[keyPath: keyPath] = newValue
                 controller.updateSettings(next)
             })
+    }
+}
+
+/// A pure-SwiftUI switch. The system `.switch` Toggle renders as a solid blue
+/// block inside this popover's `NSHostingView` until focus changes — an AppKit
+/// `NSSwitch` layout bug that survives activating/keying the window. Drawing the
+/// control ourselves sidesteps it entirely and animates more smoothly.
+struct PillToggleStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 12) {
+            configuration.label
+            Spacer(minLength: 0)
+            Button {
+                configuration.isOn.toggle()
+            } label: {
+                ZStack {
+                    Capsule()
+                        .fill(configuration.isOn ? Color.accentColor : Color.primary.opacity(0.22))
+                    Circle()
+                        .fill(.white)
+                        .frame(width: 18, height: 18)
+                        .shadow(color: .black.opacity(0.25), radius: 1, y: 0.5)
+                        .offset(x: configuration.isOn ? 8 : -8)
+                }
+                .frame(width: 38, height: 22)
+                .animation(.spring(response: 0.28, dampingFraction: 0.72), value: configuration.isOn)
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(configuration.isOn ? [.isButton, .isSelected] : .isButton)
+        }
     }
 }
