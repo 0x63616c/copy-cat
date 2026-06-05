@@ -53,14 +53,20 @@ struct GridView: View {
             .background(OverlayScrollers())
         }
         // Partial top/bottom rows dissolve instead of being hard-clipped, so the
-        // edge reads as "scroll for more" rather than a rendering glitch.
+        // edge reads as "scroll for more" rather than a rendering glitch. The
+        // trailing strip is held fully opaque so the overlay scroller (which the
+        // mask would otherwise fade at its top/bottom ends, making it look
+        // recessed/behind the content) stays crisp and on top.
         .mask(
-            VStack(spacing: 0) {
-                LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
-                    .frame(height: PopoverMetrics.gap)
-                Rectangle()
-                LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom)
-                    .frame(height: PopoverMetrics.gap)
+            HStack(spacing: 0) {
+                VStack(spacing: 0) {
+                    LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
+                        .frame(height: PopoverMetrics.gap)
+                    Rectangle()
+                    LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom)
+                        .frame(height: PopoverMetrics.gap)
+                }
+                Rectangle().frame(width: 16) // scroller lane, never faded
             }
         )
     }

@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import CopyCatCore
 
 /// The large hover preview shown in a floating panel to the left of the popover.
@@ -42,7 +43,15 @@ struct FloatingPreview: View {
                 .frame(width: fitted.width)
             }
             .padding(PreviewMetrics.padding)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: PreviewMetrics.cornerRadius))
+            // A real *behind-window* material: this card lives in a transparent
+            // floating panel over the desktop, where SwiftUI's `.regularMaterial`
+            // (within-window blending) has nothing to frost and renders invisible.
+            // NSVisualEffectView blends against what's behind the window, and
+            // degrades to a solid fill under Reduce Transparency on its own.
+            .background(
+                VisualEffectBackground(material: .popover, blending: .behindWindow)
+                    .clipShape(RoundedRectangle(cornerRadius: PreviewMetrics.cornerRadius))
+            )
             .overlay(
                 RoundedRectangle(cornerRadius: PreviewMetrics.cornerRadius)
                     .strokeBorder(.separator, lineWidth: 1)
@@ -52,5 +61,27 @@ struct FloatingPreview: View {
         } else {
             EmptyView()
         }
+    }
+}
+
+/// Hosts an `NSVisualEffectView` so the floating preview card frosts against the
+/// desktop behind its transparent panel (behind-window blending). Auto-degrades
+/// to a solid fill when Reduce Transparency is on.
+private struct VisualEffectBackground: NSViewRepresentable {
+    let material: NSVisualEffectView.Material
+    let blending: NSVisualEffectView.BlendingMode
+
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = material
+        view.blendingMode = blending
+        view.state = .active
+        return view
+    }
+
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
+        nsView.material = material
+        nsView.blendingMode = blending
+        nsView.state = .active
     }
 }
