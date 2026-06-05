@@ -13,8 +13,9 @@ enum PopoverMetrics {
     static let minWidth: CGFloat = 3 * tile + 4 * gap
     static let minHeight: CGFloat = 300
 
-    /// Settings slides in as a pane on the right, capped at ~3 columns wide.
-    static let settingsPaneWidth: CGFloat = 3 * tile + 4 * gap
+    /// Settings slides in as a pane on the right. Wider than the grid column so
+    /// the grouped form (watch-folder path + button, stepper rows) isn't cramped.
+    static let settingsPaneWidth: CGFloat = 4 * tile + 5 * gap
     /// Minimum popover height while the settings pane is open, so the form fits.
     static let settingsMinHeight: CGFloat = 470
 
