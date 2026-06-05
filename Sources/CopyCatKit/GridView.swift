@@ -99,6 +99,12 @@ private struct GridTile: View {
                 RoundedRectangle(cornerRadius: radius)
                     .strokeBorder(.white.opacity(0.10), lineWidth: 1)
             )
+            // Brighter accent ring on hover so the focused tile reads clearly.
+            .overlay(
+                RoundedRectangle(cornerRadius: radius)
+                    .strokeBorder(Color.accentColor, lineWidth: 2)
+                    .opacity(hovering && !copied ? 1 : 0)
+            )
             .overlay { hoverChrome }
             .overlay { copiedOverlay }
             .contentShape(RoundedRectangle(cornerRadius: radius))
