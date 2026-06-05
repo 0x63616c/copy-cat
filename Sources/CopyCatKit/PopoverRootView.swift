@@ -62,7 +62,7 @@ struct PopoverRootView: View {
                     Image(systemName: "gearshape")
                         .imageScale(.medium)
                         .foregroundStyle(.secondary)
-                        .padding(6)
+                        .padding(9)
                         .background(Color.primary.opacity(0.08), in: Circle())
                 }
                 .buttonStyle(.plain)
@@ -84,7 +84,7 @@ struct PopoverRootView: View {
                     Image(systemName: "xmark")
                         .imageScale(.medium)
                         .foregroundStyle(.secondary)
-                        .padding(6)
+                        .padding(9)
                         .background(Color.primary.opacity(0.08), in: Circle())
                 }
                 .buttonStyle(.plain)
