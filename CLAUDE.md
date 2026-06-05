@@ -74,4 +74,8 @@ _Add a brief overview of your project architecture_
 
 ## Conventions & Patterns
 
-_Add your project-specific conventions here_
+### Commit & deploy
+
+- **Commit SUPER often.** Small, frequent commits to `main`.
+- **If the working tree is dirty, just commit and push it** — don't sit on dirty state, don't ask first. Commits to `main` are how changes get deployed here.
+- Build before committing code (`swift build`); otherwise commit freely.
