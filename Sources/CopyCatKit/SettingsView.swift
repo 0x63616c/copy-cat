@@ -81,7 +81,7 @@ struct SettingsView: View {
         LabeledContent {
             HStack(spacing: 12) {
                 Text("\(binding.wrappedValue)")
-                    .font(.body.weight(.semibold).monospacedDigit())
+                    .font(.cc(Typo.body, weight: .semibold).monospacedDigit())
                     .frame(minWidth: 18, alignment: .trailing)
                     .contentTransition(.numericText())
                 Stepper(title, value: binding, in: range)

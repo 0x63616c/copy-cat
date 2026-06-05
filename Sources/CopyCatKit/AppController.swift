@@ -116,15 +116,21 @@ public final class AppController: ObservableObject {
         }
     }
 
-    /// Shows Settings inline inside the popover.
+    /// Opens the settings pane beside the grid.
     public func openSettings() {
         showingSettings = true
         onSettingsChange?()
     }
 
-    /// Returns from Settings to the screenshot grid.
+    /// Closes the settings pane, returning to the grid alone.
     public func closeSettings() {
         showingSettings = false
+        onSettingsChange?()
+    }
+
+    /// Toggles the settings pane (gear button).
+    public func toggleSettings() {
+        showingSettings.toggle()
         onSettingsChange?()
     }
 

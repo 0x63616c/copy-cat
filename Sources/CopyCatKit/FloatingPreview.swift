@@ -38,7 +38,7 @@ struct FloatingPreview: View {
                             .monospacedDigit()
                     }
                 }
-                .font(.callout)
+                .font(.cc(Typo.callout))
                 .foregroundStyle(.primary.opacity(0.78))
                 .frame(width: fitted.width)
             }

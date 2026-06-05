@@ -125,7 +125,7 @@ private struct GridTile: View {
                 HStack {
                     Spacer()
                     Image(systemName: "doc.on.doc.fill")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.cc(9, weight: .bold))
                         .foregroundStyle(.white)
                         .padding(4)
                         .background(.black.opacity(0.55), in: Circle())
@@ -133,7 +133,7 @@ private struct GridTile: View {
                 Spacer()
                 HStack {
                     Text(age)
-                        .font(.system(size: 9, weight: .semibold))
+                        .font(.cc(9, weight: .semibold))
                         .monospacedDigit()
                         .foregroundStyle(.white)
                         .padding(.horizontal, 5)
@@ -157,7 +157,7 @@ private struct GridTile: View {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 22, weight: .semibold))
                     Text("Copied")
-                        .font(.caption2.weight(.semibold))
+                        .font(.cc(Typo.caption2, weight: .semibold))
                 }
                 .foregroundStyle(.white)
             }

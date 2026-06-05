@@ -6,54 +6,84 @@ struct PopoverRootView: View {
     @EnvironmentObject var controller: AppController
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
+        HStack(spacing: 0) {
+            gridColumn
             if controller.showingSettings {
-                SettingsView()
-            } else {
-                if controller.status.showNotSavingBanner {
-                    NotSavingBanner(
-                        onEnable: { controller.enableFileTarget() },
-                        onDisableThumbnail: { controller.disableThumbnail() })
-                }
-                content
+                Divider()
+                settingsPane
+                    .frame(width: PopoverMetrics.settingsPaneWidth)
+                    .transition(.move(edge: .trailing))
             }
         }
-        // Darken the popover's default material so the grid reads on a deeper,
-        // charcoal background instead of the lighter system gray.
-        .background(Color.black.opacity(0.28))
+        // +20% type across the whole popover: default-font Text/labels/controls
+        // inherit this; views with explicit fonts use `Font.cc(...)` directly.
+        .environment(\.font, .cc(Typo.body))
+        .frame(maxHeight: .infinity, alignment: .top)
+        // The popover appearance (set on NSPopover) owns the dark material now,
+        // so arrow and body match. No content-level overlay (which caused the
+        // seam against the arrow).
+        .animation(.easeInOut(duration: 0.22), value: controller.showingSettings)
         // Clear the floating preview if the cursor leaves the popover entirely.
         .onHover { inside in if !inside { controller.setHoveredPreview(nil) } }
     }
 
-    private var header: some View {
+    /// Left side: header + screenshot grid (or empty / no-access state).
+    private var gridColumn: some View {
+        VStack(spacing: 0) {
+            gridHeader
+            if controller.status.showNotSavingBanner {
+                NotSavingBanner(
+                    onEnable: { controller.enableFileTarget() },
+                    onDisableThumbnail: { controller.disableThumbnail() })
+            }
+            content
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    private var gridHeader: some View {
         HStack(spacing: 8) {
-            if controller.showingSettings {
+            Text("All Screenshots").font(.cc(Typo.headline, weight: .bold))
+            Spacer()
+            Button { controller.toggleSettings() } label: {
+                Image(systemName: "gearshape")
+                    .imageScale(.medium)
+                    .foregroundStyle(controller.showingSettings ? Color.accentColor : .secondary)
+                    .padding(6)
+                    .background(
+                        Color.primary.opacity(controller.showingSettings ? 0.16 : 0.08),
+                        in: RoundedRectangle(cornerRadius: 6))
+            }
+            .buttonStyle(.plain)
+            .help("Settings")
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 14)
+        .padding(.bottom, 10)
+    }
+
+    /// Right side: the settings pane that slides in, with its own close button.
+    private var settingsPane: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                Text("Settings").font(.cc(Typo.headline, weight: .bold))
+                Spacer()
                 Button { controller.closeSettings() } label: {
-                    Image(systemName: "chevron.backward")
-                        .imageScale(.large)
-                }
-                .buttonStyle(.borderless)
-                .help("Back")
-                Text("Settings").font(.headline)
-                Spacer()
-            } else {
-                Text("All Screenshots").font(.system(size: 13, weight: .bold))
-                Spacer()
-                Button { controller.openSettings() } label: {
-                    Image(systemName: "gearshape")
+                    Image(systemName: "xmark")
                         .imageScale(.medium)
                         .foregroundStyle(.secondary)
                         .padding(6)
                         .background(Color.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
                 }
                 .buttonStyle(.plain)
-                .help("Settings")
+                .help("Close settings")
             }
+            .padding(.horizontal, 16)
+            .padding(.top, 14)
+            .padding(.bottom, 10)
+            SettingsView()
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 14)
-        .padding(.bottom, 10)
+        .frame(maxHeight: .infinity, alignment: .top)
     }
 
     @ViewBuilder private var content: some View {

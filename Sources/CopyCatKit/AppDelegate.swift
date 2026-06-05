@@ -24,6 +24,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         controller.onSettingsChange = { [weak self] in self?.applyNavigation() }
 
         popover.behavior = .transient
+        // Force a dark appearance so the popover's arrow and body share one
+        // material. The old approach darkened only the SwiftUI content with a
+        // translucent black overlay, which left the AppKit-drawn arrow lighter
+        // than the body — a visible seam where they met. Letting the popover
+        // chrome own the dark material means the arrow matches by construction.
+        popover.appearance = NSAppearance(named: .darkAqua)
         popover.delegate = self
         popover.contentSize = popoverSize()
         popover.contentViewController = NSHostingController(
@@ -97,12 +103,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }
 
     private func popoverSize() -> NSSize {
-        if controller.showingSettings { return PopoverMetrics.settingsSize }
         let s = PopoverMetrics.size(
             columns: controller.settings.gridColumns,
             rows: controller.settings.gridRows,
             count: controller.screenshots.count,
-            banner: controller.status.showNotSavingBanner)
+            banner: controller.status.showNotSavingBanner,
+            settings: controller.showingSettings)
         return NSSize(width: s.width, height: s.height)
     }
 
