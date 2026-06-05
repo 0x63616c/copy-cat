@@ -35,7 +35,7 @@ struct PopoverRootView: View {
                 Text("Settings").font(.headline)
                 Spacer()
             } else {
-                Text("All Screenshots").font(.system(size: 26, weight: .bold))
+                Text("All Screenshots").font(.system(size: 13, weight: .bold))
                 Spacer()
                 Button { controller.openSettings() } label: {
                     Image(systemName: "gearshape")
