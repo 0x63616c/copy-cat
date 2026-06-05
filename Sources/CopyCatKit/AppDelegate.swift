@@ -119,9 +119,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             popover.animates = true
             popover.contentSize = popoverSize()
         } else {
-            // Closing: keep the window wide while SwiftUI slides the pane out,
-            // then glide it back down to the grid-only size.
-            DispatchQueue.main.asyncAfter(deadline: .now() + Self.paneSlide) { [weak self] in
+            // Closing: let the pane start sliding out, then begin shrinking the
+            // window partway through so the two overlap and the collapse feels
+            // symmetric with the open (rather than a two-step "slide, then
+            // shrink"). The short lead lets the pane's left edge clear the
+            // narrower width before the window edge catches up, avoiding a clip.
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.paneShrinkLead) { [weak self] in
                 guard let self, self.popover.isShown, !self.controller.showingSettings else { return }
                 self.popover.animates = true
                 self.popover.contentSize = self.popoverSize()
@@ -134,6 +137,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     /// is the slower, dominant motion (AppKit's window resize is quicker), which
     /// is what makes the open/close feel like an unhurried glide.
     private static let paneSlide: TimeInterval = 0.5
+
+    /// How long the window stays full-width before it starts shrinking on close.
+    /// Less than `paneSlide` so the window collapse overlaps the pane slide-out,
+    /// mirroring the simultaneous grow+slide on open.
+    private static let paneShrinkLead: TimeInterval = 0.22
 
     private func popoverSize() -> NSSize {
         let s = PopoverMetrics.size(
