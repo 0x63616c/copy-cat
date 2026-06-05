@@ -45,17 +45,17 @@ struct PopoverRootView: View {
         HStack(spacing: 8) {
             Text("All Screenshots").font(.cc(Typo.headline, weight: .bold))
             Spacer()
-            Button { controller.toggleSettings() } label: {
-                Image(systemName: "gearshape")
-                    .imageScale(.medium)
-                    .foregroundStyle(controller.showingSettings ? Color.accentColor : .secondary)
-                    .padding(6)
-                    .background(
-                        Color.primary.opacity(controller.showingSettings ? 0.16 : 0.08),
-                        in: RoundedRectangle(cornerRadius: 6))
+            if !controller.showingSettings {
+                Button { controller.openSettings() } label: {
+                    Image(systemName: "gearshape")
+                        .imageScale(.medium)
+                        .foregroundStyle(.secondary)
+                        .padding(6)
+                        .background(Color.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+                }
+                .buttonStyle(.plain)
+                .help("Settings")
             }
-            .buttonStyle(.plain)
-            .help("Settings")
         }
         .padding(.horizontal, 16)
         .padding(.top, 14)
