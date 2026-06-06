@@ -14,6 +14,7 @@ struct SettingsView: View {
         Form {
             captureSection
             librarySection
+            diagnosticsSection
         }
         .formStyle(.grouped)
         // Drop the grouped form's opaque background so the popover's dark
@@ -55,6 +56,20 @@ struct SettingsView: View {
             Text("Library")
         } footer: {
             Text("The folder CopyCat watches for new screenshots.")
+        }
+    }
+
+    private var diagnosticsSection: some View {
+        Section {
+            LabeledContent {
+                Button("Open Logs") { controller.openLogs() }
+            } label: {
+                Label("Activity log", systemImage: "doc.text.magnifyingglass")
+            }
+        } header: {
+            Text("Diagnostics")
+        } footer: {
+            Text("CopyCat records what it does to a log file. Open it to see recent activity.")
         }
     }
 

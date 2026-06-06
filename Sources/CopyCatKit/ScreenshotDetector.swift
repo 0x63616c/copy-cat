@@ -61,10 +61,12 @@ public final class ScreenshotDetector {
         ]
         // Coalesce bursts (e.g. importing many files) into one update.
         query.notificationBatchingInterval = 0.25
+        AppLog.shared.info("spotlight query started; scope=\(folderPath)")
         query.start()
     }
 
     public func update(folderPath: String) {
+        AppLog.shared.info("watcher re-pointed to \(folderPath)")
         self.folderPath = folderPath
         start()
     }

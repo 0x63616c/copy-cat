@@ -74,6 +74,14 @@ _Add a brief overview of your project architecture_
 
 ## Conventions & Patterns
 
+### Logging / debugging
+
+- **Runtime activity log:** `~/Library/Application Support/copy-cat/copy-cat.log` (next to `config.json`). Append-only, auto-trimmed to ~512 KB once it passes ~1 MB.
+- Written through `AppLog.shared` (`Sources/CopyCatCore/AppLog.swift`); thread-safe, serialized on a background queue. Use `.info` / `.warn` / `.error`.
+- Every meaningful action logs: app start + resolved watch folder, bookmark resolution, folder updates (count + delta), new screenshots (copied / queued / skipped), manual copy, settings + watch-folder changes, access OK/DENIED transitions, reveal/copy-path, Spotlight query start/re-point.
+- In-app access: **Settings → Diagnostics → "Open Logs"** opens the file in Console. Tail it live with `tail -f "$HOME/Library/Application Support/copy-cat/copy-cat.log"`.
+- When adding a new user-facing action, add an `AppLog.shared.info(...)` line for it.
+
 ### Commit & deploy
 
 - **Commit SUPER often.** Small, frequent commits to `main`.

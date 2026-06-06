@@ -40,7 +40,10 @@ public final class AppController: ObservableObject {
     private let clipboard: Clipboard
     private let prefs: ScreencapturePreferences
     private let access: FolderAccessing
+    private let log = AppLog.shared
     private var detector: ScreenshotDetector?
+    /// Last access state we logged, so we only log access transitions, not every poll.
+    private var lastLoggedAccess: Bool?
     /// Newest screenshot seen while paused, to back-fill on resume.
     private var pendingBackfill: Screenshot?
 
@@ -66,7 +69,9 @@ public final class AppController: ObservableObject {
 
     /// Starts the live detector. Called by the app shell, never by tests.
     public func start() {
-        _ = access.resolveBookmark()
+        log.info("app starting (v\(CopyCatCore.version)); watchFolder=\(watchFolder)")
+        let bookmark = access.resolveBookmark()
+        log.info("bookmark \(bookmark == nil ? "not found (relying on default access)" : "resolved: \(bookmark!.path)")")
         let detector = ScreenshotDetector(folderPath: watchFolder)
         detector.onUpdate = { [weak self] shots in self?.ingest(shots) }
         detector.onNewScreenshots = { [weak self] fresh in self?.handleNew(fresh) }
@@ -76,21 +81,38 @@ public final class AppController: ObservableObject {
     }
 
     func ingest(_ shots: [Screenshot]) {
+        let delta = shots.count - screenshots.count
         screenshots = shots
+        log.info("folder update: \(shots.count) screenshots\(delta == 0 ? "" : " (\(delta > 0 ? "+" : "")\(delta))")")
         refreshStatus()
     }
 
     func handleNew(_ fresh: [Screenshot]) {
-        guard settings.copyOnScreenshot, let newest = fresh.first else { return }
+        guard let newest = fresh.first else { return }
+        let name = newest.url.lastPathComponent
+        guard settings.copyOnScreenshot else {
+            log.info("new screenshot: \(name) (auto-copy off, not copying)")
+            return
+        }
         if status.autoCopyPaused {
             pendingBackfill = newest
+            log.warn("new screenshot: \(name) (auto-copy paused, queued for backfill)")
         } else {
             clipboard.copyImage(at: newest.url)
+            log.info("new screenshot: \(name) → copied to clipboard")
         }
     }
 
     func refreshStatus() {
         let hasAccess = access.canRead(path: watchFolder)
+        if hasAccess != lastLoggedAccess {
+            if hasAccess {
+                log.info("folder access OK: \(watchFolder)")
+            } else {
+                log.error("folder access DENIED: \(watchFolder)")
+            }
+            lastLoggedAccess = hasAccess
+        }
         let wasPaused = status.autoCopyPaused
         status = resolveStatus(
             hasAccess: hasAccess,
@@ -101,6 +123,7 @@ public final class AppController: ObservableObject {
            let backfill = pendingBackfill ?? screenshots.first {
             clipboard.copyImage(at: backfill.url)
             pendingBackfill = nil
+            log.info("auto-copy resumed → backfilled \(backfill.url.lastPathComponent)")
         }
         onStatusChange?()
     }
@@ -109,6 +132,7 @@ public final class AppController: ObservableObject {
 
     public func copy(_ shot: Screenshot) {
         clipboard.copyImage(at: shot.url)
+        log.info("manual copy: \(shot.url.lastPathComponent)")
         flashCopied(shot.id)
     }
 
@@ -155,17 +179,31 @@ public final class AppController: ObservableObject {
         let old = settings
         settings = newSettings
         try? store.save(settings)
+        if settings.copyOnScreenshot != old.copyOnScreenshot {
+            log.info("setting changed: copyOnScreenshot=\(settings.copyOnScreenshot)")
+        }
         if settings.saveLocationPath != old.saveLocationPath {
+            log.info("watch folder changed → \(watchFolder)")
+            lastLoggedAccess = nil  // re-log access state for the new folder
             detector?.update(folderPath: watchFolder)
         }
         refreshStatus()
     }
 
-    public func enableFileTarget() { prefs.enableFileTarget(); refreshStatus() }
-    public func disableThumbnail() { prefs.disableThumbnail() }
+    public func enableFileTarget() {
+        prefs.enableFileTarget()
+        log.info("enabled screencapture file target")
+        refreshStatus()
+    }
+
+    public func disableThumbnail() {
+        prefs.disableThumbnail()
+        log.info("disabled screencapture floating thumbnail")
+    }
 
     public func chooseFolder(_ url: URL) {
         access.saveBookmark(for: url)
+        log.info("watch folder chosen: \(url.path)")
         var s = settings
         s.saveLocationPath = url.path
         updateSettings(s)
@@ -173,21 +211,31 @@ public final class AppController: ObservableObject {
 
     public func useEscapeHatch() {
         let url = access.escapeHatchFolder()
+        log.info("using escape-hatch folder: \(url.path)")
         var s = settings
         s.saveLocationPath = url.path
         updateSettings(s)
     }
 
     public func openPrivacySettings() {
+        log.info("opened Privacy & Security settings")
         let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_FilesAndFolders")!
         NSWorkspace.shared.open(url)
     }
 
+    /// Opens the activity log file in its default handler (Console on macOS).
+    public func openLogs() {
+        log.info("opened activity log from settings")
+        NSWorkspace.shared.open(log.fileURL)
+    }
+
     public func revealInFinder(_ shot: Screenshot) {
+        log.info("reveal in Finder: \(shot.url.lastPathComponent)")
         NSWorkspace.shared.activateFileViewerSelecting([shot.url])
     }
 
     public func copyPath(_ shot: Screenshot) {
+        log.info("copy path: \(shot.url.path)")
         let pb = NSPasteboard.general
         pb.clearContents()
         pb.setString(shot.url.path, forType: .string)
