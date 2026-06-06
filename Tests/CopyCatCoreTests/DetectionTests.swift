@@ -16,6 +16,37 @@ private func shot(_ path: String, _ t: TimeInterval) -> Screenshot {
     #expect(isScreenshot(isScreenCaptureFlag: nil, fileName: "CleanShot.png") == false)
 }
 
+private func entry(_ name: String, _ t: TimeInterval, regular: Bool = true) -> DirectoryEntry {
+    DirectoryEntry(
+        url: URL(fileURLWithPath: "/shots/\(name)"),
+        name: name, isRegularFile: regular,
+        modificationDate: Date(timeIntervalSince1970: t))
+}
+
+@Test func screenshotsFromEntriesKeepsOnlyScreenshotFilesNewestFirst() {
+    let result = screenshots(fromEntries: [
+        entry("Screenshot 2026-06-04.png", 10),
+        entry("CleanShot.png", 99),                 // not a screenshot name
+        entry("Screenshot 2026-06-06.png", 30),
+        entry("Screenshot 2026-06-05.png", 20),
+    ])
+    #expect(result.map(\.url.lastPathComponent) == [
+        "Screenshot 2026-06-06.png", "Screenshot 2026-06-05.png", "Screenshot 2026-06-04.png",
+    ])
+}
+
+@Test func screenshotsFromEntriesSkipsDirectories() {
+    let result = screenshots(fromEntries: [
+        entry("Screenshot folder", 50, regular: false),
+        entry("Screenshot real.png", 10),
+    ])
+    #expect(result.map(\.url.lastPathComponent) == ["Screenshot real.png"])
+}
+
+@Test func screenshotsFromEntriesEmptyWhenNoneMatch() {
+    #expect(screenshots(fromEntries: [entry("photo.jpg", 1), entry("notes.txt", 2)]).isEmpty)
+}
+
 @Test func sortsNewestFirst() {
     let sorted = sortedNewestFirst([shot("/a", 10), shot("/b", 30), shot("/c", 20)])
     #expect(sorted.map(\.url.lastPathComponent) == ["b", "c", "a"])

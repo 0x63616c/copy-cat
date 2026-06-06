@@ -1,68 +1,65 @@
 import Foundation
 import CopyCatCore
 
-/// Wraps `NSMetadataItem`s so a snapshot can cross to a background queue under
-/// Swift 6 strict concurrency. Safe because the items are immutable snapshots
-/// captured while query updates are disabled.
-private struct ItemBox: @unchecked Sendable {
-    let items: [NSMetadataItem]
-}
-
-/// Live folder watcher built on Spotlight. Emits the full newest-first list on
-/// every change and reports a newly-arrived screenshot.
+/// Live folder watcher that reads the filesystem **directly** — no Spotlight.
 ///
-/// `NSMetadataQuery` delivers notifications on the main run loop. Parsing the
-/// results (which can be thousands of files) is dispatched to a background queue
-/// so it never blocks the UI; only the finished result is handed back to the
-/// main actor.
+/// History: this used to be an `NSMetadataQuery` (a live Spotlight query). That
+/// made the entire app silently dependent on Spotlight indexing the watch
+/// folder. When macOS dropped indexing on `~/Screenshots` ("unknown indexing
+/// state"), new screenshots stopped appearing in the UI and auto-copy died, with
+/// no error anywhere. Spotlight is exactly the kind of "bullshit" we never want
+/// to depend on again.
 ///
-/// The list is *not* capped: the grid is virtualized (`LazyVGrid` realizes only
-/// on-screen tiles) and the decoded-thumbnail cache is bounded independently, so
-/// the cost is set by what's visible, not by how many files exist. An optional
-/// `displayLimit` remains as a safety valve for pathological folders; `nil`
-/// (the default) means show every screenshot.
+/// This implementation has two independent legs so a single failure can't blind
+/// the app:
+///   1. A `DispatchSource` vnode watch on the folder's file descriptor for
+///      instant reaction when entries are added/renamed/removed.
+///   2. A low-frequency poll timer as a safety net that re-scans regardless of
+///      whether any event fired (covers missed events, network volumes, etc.).
+///
+/// Both legs converge on the same debounced `runScan`, which enumerates the
+/// directory with `FileManager` and hands the result to `CopyCatCore` for the
+/// (pure, tested) screenshot-filtering decision. Detection now works whether or
+/// not Spotlight is indexing anything.
 @MainActor
 public final class ScreenshotDetector {
     public var onUpdate: (([Screenshot]) -> Void)?
     public var onNewScreenshots: (([Screenshot]) -> Void)?
 
-    private let query = NSMetadataQuery()
     private let displayLimit: Int?
     private var folderPath: String
     /// Identity of the newest screenshot we've delivered, for O(1) new-detection.
     private var lastNewestID: String?
-    /// Becomes true after the first gather so we don't "copy" a pre-existing shot.
+    /// Becomes true after the first scan so we don't "copy" a pre-existing shot.
     private var hasGathered = false
+
+    /// vnode watch on the folder fd.
+    private var source: DispatchSourceFileSystemObject?
+    /// Periodic safety-net re-scan, independent of vnode events.
+    private var pollTimer: DispatchSourceTimer?
+    /// Pending debounce, so a burst of vnode events coalesces into one scan.
+    private var debounceTask: Task<Void, Never>?
+    /// Serializes the (blocking) FS enumeration off the main actor.
+    private let scanQueue = DispatchQueue(label: "co.copycat.folderwatcher.scan", qos: .userInitiated)
+
+    /// How often the safety-net poll re-scans even if no event fired.
+    private let pollInterval: TimeInterval = 4
+    /// Coalesce window for bursts of vnode events (temp-file + rename, etc.).
+    private let debounce: TimeInterval = 0.2
 
     public init(folderPath: String, displayLimit: Int? = nil) {
         self.folderPath = folderPath
         self.displayLimit = displayLimit
-        NotificationCenter.default.addObserver(
-            self, selector: #selector(handle(_:)),
-            name: .NSMetadataQueryDidFinishGathering, object: query)
-        NotificationCenter.default.addObserver(
-            self, selector: #selector(handle(_:)),
-            name: .NSMetadataQueryDidUpdate, object: query)
     }
 
     public func start() {
-        query.stop()
+        stop()
         lastNewestID = nil
         hasGathered = false
-        query.searchScopes = [folderPath]
-        query.predicate = NSPredicate(
-            format: "kMDItemIsScreenCapture == 1 || kMDItemFSName LIKE 'Screenshot*'")
-        // Pre-sorted newest-first so the capped prefix is the newest files.
-        query.sortDescriptors = [NSSortDescriptor(key: NSMetadataItemFSContentChangeDateKey, ascending: false)]
-        // Prefetch the attributes we read so off-main access is cached dict reads.
-        query.valueListAttributes = [
-            NSMetadataItemPathKey, NSMetadataItemFSNameKey,
-            NSMetadataItemFSContentChangeDateKey, "kMDItemIsScreenCapture",
-        ]
-        // Coalesce bursts (e.g. importing many files) into one update.
-        query.notificationBatchingInterval = 0.25
-        AppLog.shared.info("spotlight query started; scope=\(folderPath)")
-        query.start()
+        AppLog.shared.info("folder watcher started; scope=\(folderPath) (direct FS watch + \(Int(pollInterval))s poll, Spotlight-independent)")
+        beginVnodeWatch()
+        beginPoll()
+        runScan()  // initial gather, immediately
     }
 
     public func update(folderPath: String) {
@@ -71,26 +68,82 @@ public final class ScreenshotDetector {
         start()
     }
 
-    public func stop() { query.stop() }
+    public func stop() {
+        source?.cancel()  // cancel handler closes the fd
+        source = nil
+        pollTimer?.cancel()
+        pollTimer = nil
+        debounceTask?.cancel()
+        debounceTask = nil
+    }
 
-    @objc private func handle(_ note: Notification) {
-        query.disableUpdates()
-        let box = ItemBox(items: (query.results as? [NSMetadataItem]) ?? [])
-        query.enableUpdates()
+    // MARK: Watch legs
+
+    private func beginVnodeWatch() {
+        let fd = open(folderPath, O_EVTONLY)
+        guard fd >= 0 else {
+            // Not fatal: the poll leg still catches new screenshots.
+            AppLog.shared.warn("folder watcher: open(\(folderPath)) failed (errno \(errno)); poll-only until re-point")
+            return
+        }
+        let src = DispatchSource.makeFileSystemObjectSource(
+            fileDescriptor: fd,
+            eventMask: [.write, .rename, .delete, .extend, .attrib],
+            queue: scanQueue)
+        // Must be explicitly @Sendable: otherwise the closure inherits this
+        // @MainActor method's isolation, and dispatch invoking it on scanQueue
+        // trips a fatal executor assertion. Non-isolated handler hops via Task.
+        let onEvent: @Sendable () -> Void = { [weak self] in
+            Task { @MainActor in self?.scheduleScan() }
+        }
+        src.setEventHandler(handler: onEvent)
+        src.setCancelHandler { close(fd) }
+        source = src
+        src.resume()
+    }
+
+    private func beginPoll() {
+        let timer = DispatchSource.makeTimerSource(queue: scanQueue)
+        timer.schedule(deadline: .now() + pollInterval, repeating: pollInterval, leeway: .seconds(1))
+        // @Sendable for the same reason as the vnode handler above.
+        let onTick: @Sendable () -> Void = { [weak self] in
+            Task { @MainActor in self?.runScan() }
+        }
+        timer.setEventHandler(handler: onTick)
+        pollTimer = timer
+        timer.resume()
+    }
+
+    // MARK: Scan
+
+    /// Debounced scan: collapses a burst of vnode events into one enumeration.
+    private func scheduleScan() {
+        debounceTask?.cancel()
+        debounceTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64((self?.debounce ?? 0.2) * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            self?.runScan()
+        }
+    }
+
+    /// Enumerates the folder off-main, then delivers the result on the main actor.
+    private func runScan() {
+        let path = folderPath
         let limit = displayLimit
-
-        DispatchQueue.global(qos: .userInitiated).async {
-            let parsed = Self.parse(box.items)
-            // Spotlight pre-sorts newest-first, but re-sort to be order-independent.
-            let ordered = limit.map { mostRecent(parsed, limit: $0) } ?? sortedNewestFirst(parsed)
+        scanQueue.async { [weak self] in
+            let entries = Self.enumerate(path)
+            var ordered = screenshots(fromEntries: entries)
+            if let limit { ordered = Array(ordered.prefix(limit)) }
             let newest = ordered.first
             Task { @MainActor [weak self] in
-                self?.deliver(ordered: ordered, newest: newest)
+                self?.deliver(ordered: ordered, newest: newest, scannedPath: path)
             }
         }
     }
 
-    private func deliver(ordered: [Screenshot], newest: Screenshot?) {
+    private func deliver(ordered: [Screenshot], newest: Screenshot?, scannedPath: String) {
+        // Drop results from a folder we've since stopped watching.
+        guard scannedPath == folderPath else { return }
         onUpdate?(ordered)
         if let newest, newest.id != lastNewestID {
             if hasGathered { onNewScreenshots?([newest]) }
@@ -99,21 +152,25 @@ public final class ScreenshotDetector {
         hasGathered = true
     }
 
-    /// Parses metadata items into screenshots. `nonisolated static` so it can run
-    /// on a background queue.
-    nonisolated private static func parse(_ items: [NSMetadataItem]) -> [Screenshot] {
-        var shots: [Screenshot] = []
-        shots.reserveCapacity(items.count)
-        for item in items {
-            guard let path = item.value(forAttribute: NSMetadataItemPathKey) as? String else { continue }
-            let name = item.value(forAttribute: NSMetadataItemFSNameKey) as? String ?? ""
-            let flag = item.value(forAttribute: "kMDItemIsScreenCapture") as? Bool
-            guard isScreenshot(isScreenCaptureFlag: flag, fileName: name) else { continue }
-            let date = (item.value(forAttribute: NSMetadataItemFSContentChangeDateKey) as? Date) ?? .distantPast
-            shots.append(Screenshot(url: URL(fileURLWithPath: path), captureDate: date))
+    /// Reads a directory into raw entries. `nonisolated static` so it runs on the
+    /// scan queue. Returns an empty list if the folder can't be read.
+    nonisolated private static func enumerate(_ path: String) -> [DirectoryEntry] {
+        let keys: [URLResourceKey] = [.nameKey, .isRegularFileKey, .contentModificationDateKey]
+        let dir = URL(fileURLWithPath: path, isDirectory: true)
+        guard let urls = try? FileManager.default.contentsOfDirectory(
+            at: dir, includingPropertiesForKeys: keys,
+            options: [.skipsHiddenFiles, .skipsSubdirectoryDescendants]) else {
+            return []
         }
-        return shots
+        return urls.map { url in
+            let values = try? url.resourceValues(forKeys: Set(keys))
+            return DirectoryEntry(
+                url: url,
+                name: values?.name ?? url.lastPathComponent,
+                isRegularFile: values?.isRegularFile ?? true,
+                modificationDate: values?.contentModificationDate ?? .distantPast)
+        }
     }
 
-    deinit { NotificationCenter.default.removeObserver(self) }
+    deinit { source?.cancel() }
 }
