@@ -167,6 +167,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         panel.allowsMultipleSelection = false
         if panel.runModal() == .OK, let url = panel.url {
             controller.chooseFolder(url)
+        } else {
+            controller.folderPickerCancelled()
         }
     }
 
@@ -174,6 +176,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         if popover.isShown {
             popover.performClose(sender)
         } else {
+            controller.popoverOpened()
             controller.refreshStatus()
             updateBadge()
             popover.contentSize = popoverSize()
@@ -190,6 +193,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     // MARK: NSPopoverDelegate
 
     func popoverDidClose(_ notification: Notification) {
+        controller.popoverClosed()
         controller.setHoveredPreview(nil)
         previewWC.hide()
         // Reopen to the grid next time, not stuck in Settings.

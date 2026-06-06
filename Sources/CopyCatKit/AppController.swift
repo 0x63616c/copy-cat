@@ -29,7 +29,17 @@ public final class AppController: ObservableObject {
     public var onChooseFolder: (() -> Void)?
 
     /// Asks the shell to present the watch-folder picker.
-    public func requestChooseFolder() { onChooseFolder?() }
+    public func requestChooseFolder() {
+        log.info("clicked Choose… (watch-folder picker)")
+        onChooseFolder?()
+    }
+
+    /// Logged by the shell when the folder picker is dismissed without a choice.
+    public func folderPickerCancelled() { log.info("watch-folder picker cancelled") }
+
+    /// Logged by the shell when the menu-bar icon opens/closes the popover.
+    public func popoverOpened() { log.info("popover opened") }
+    public func popoverClosed() { log.info("popover closed") }
 
     /// Whether Settings is showing inline inside the popover (replacing the grid).
     /// Settings lives *in* the popover rather than a separate window so it stays
@@ -149,18 +159,21 @@ public final class AppController: ObservableObject {
 
     /// Opens the settings pane beside the grid.
     public func openSettings() {
+        log.info("settings opened")
         showingSettings = true
         onSettingsChange?()
     }
 
     /// Closes the settings pane, returning to the grid alone.
     public func closeSettings() {
+        log.info("settings closed (back button)")
         showingSettings = false
         onSettingsChange?()
     }
 
     /// Toggles the settings pane (gear button).
     public func toggleSettings() {
+        log.info("gear button → settings \(showingSettings ? "closing" : "opening")")
         showingSettings.toggle()
         onSettingsChange?()
     }
@@ -172,6 +185,11 @@ public final class AppController: ObservableObject {
     public func setHoveredPreview(_ shot: Screenshot?) {
         guard hoveredPreview != shot else { return }
         hoveredPreview = shot
+        if let shot {
+            log.info("hover: \(shot.url.lastPathComponent)")
+        } else {
+            log.info("hover ended")
+        }
         onHoverChange?(shot)
     }
 

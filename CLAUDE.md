@@ -78,7 +78,7 @@ _Add a brief overview of your project architecture_
 
 - **Runtime activity log:** `~/Library/Application Support/copy-cat/copy-cat.log` (next to `config.json`). Append-only, auto-trimmed to ~512 KB once it passes ~1 MB.
 - Written through `AppLog.shared` (`Sources/CopyCatCore/AppLog.swift`); thread-safe, serialized on a background queue. Use `.info` / `.warn` / `.error`.
-- Every meaningful action logs: app start + resolved watch folder, bookmark resolution, folder updates (count + delta), new screenshots (copied / queued / skipped), manual copy, settings + watch-folder changes, access OK/DENIED transitions, reveal/copy-path, Spotlight query start/re-point.
+- Goal is **full-detail tracing of everything the app does.** Logged: app start + resolved watch folder, bookmark resolution, folder updates (count + delta), new screenshots (copied / queued / skipped), manual copy, settings open/close + gear/back clicks, copy-toggle + watch-folder changes, Choose… click + picker cancel, popover open/close, tile hover enter/leave, access OK/DENIED transitions, reveal/copy-path, Spotlight query start/re-point.
 - In-app access: **Settings → Diagnostics → "Open Logs"** opens the file in Console. Tail it live with `tail -f "$HOME/Library/Application Support/copy-cat/copy-cat.log"`.
 - When adding a new user-facing action, add an `AppLog.shared.info(...)` line for it.
 
