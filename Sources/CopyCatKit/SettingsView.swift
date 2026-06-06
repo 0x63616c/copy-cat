@@ -41,16 +41,21 @@ struct SettingsView: View {
 
     private var librarySection: some View {
         Section {
-            LabeledContent {
+            // Button rides the label row (always has room); the path gets its
+            // own full-width line below, middle-truncated so a long path never
+            // wraps and breaks the row.
+            VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 8) {
-                    Text(controller.settings.saveLocationPath ?? "macOS default")
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
+                    Label("Watch folder", systemImage: "folder")
+                    Spacer(minLength: 8)
                     Button("Choose…") { controller.requestChooseFolder() }
                 }
-            } label: {
-                Label("Watch folder", systemImage: "folder")
+                Text(controller.settings.saveLocationPath ?? "macOS default")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         } header: {
             Text("Library")
