@@ -7,9 +7,37 @@ public struct AppSettings: Codable, Equatable, Sendable {
     /// Folder to watch. `nil` means "use the macOS screencapture location".
     public var saveLocationPath: String?
 
-    public init(copyOnScreenshot: Bool, saveLocationPath: String?) {
+    /// Global hotkey that opens the menu-bar popover. Default: Hyper+X.
+    public var openMenuShortcut: HotKey
+    /// Global hotkey that copies the newest screenshot to the clipboard. Default: Hyper+C.
+    public var copyLastShortcut: HotKey
+
+    public init(
+        copyOnScreenshot: Bool,
+        saveLocationPath: String?,
+        openMenuShortcut: HotKey = .hyper(7),   // X
+        copyLastShortcut: HotKey = .hyper(8)    // C
+    ) {
         self.copyOnScreenshot = copyOnScreenshot
         self.saveLocationPath = saveLocationPath
+        self.openMenuShortcut = openMenuShortcut
+        self.copyLastShortcut = copyLastShortcut
+    }
+
+    // Backward-compatible decode: configs written before shortcuts existed have
+    // no `openMenuShortcut`/`copyLastShortcut` keys. Decode them as optional and
+    // fall back to the Hyper defaults so an old config keeps its other settings
+    // instead of the whole struct failing to decode and resetting everything.
+    private enum CodingKeys: String, CodingKey {
+        case copyOnScreenshot, saveLocationPath, openMenuShortcut, copyLastShortcut
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.copyOnScreenshot = try c.decode(Bool.self, forKey: .copyOnScreenshot)
+        self.saveLocationPath = try c.decodeIfPresent(String.self, forKey: .saveLocationPath)
+        self.openMenuShortcut = try c.decodeIfPresent(HotKey.self, forKey: .openMenuShortcut) ?? .hyper(7)
+        self.copyLastShortcut = try c.decodeIfPresent(HotKey.self, forKey: .copyLastShortcut) ?? .hyper(8)
     }
 
     public static let defaults = AppSettings(

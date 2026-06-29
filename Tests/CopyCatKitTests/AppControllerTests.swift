@@ -19,6 +19,42 @@ private func makeController(clipboard: FakeClipboard, prefs: FakePrefs, access: 
     #expect(clip.copied == [URL(fileURLWithPath: "/a")]) // newest only
 }
 
+@Test @MainActor func copyLastScreenshotCopiesNewest() {
+    let clip = FakeClipboard()
+    let c = makeController(clipboard: clip, prefs: FakePrefs(), access: FakeAccess())
+    c.ingest([shot("/newest", 5), shot("/older", 1)])  // newest first
+    c.copyLastScreenshot()
+    #expect(clip.copied == [URL(fileURLWithPath: "/newest")])
+}
+
+@Test @MainActor func copyLastScreenshotNoOpWhenEmpty() {
+    let clip = FakeClipboard()
+    let c = makeController(clipboard: clip, prefs: FakePrefs(), access: FakeAccess())
+    c.copyLastScreenshot()
+    #expect(clip.copied.isEmpty)
+}
+
+@Test @MainActor func editingAShortcutFiresHotKeysChange() {
+    let c = makeController(clipboard: FakeClipboard(), prefs: FakePrefs(), access: FakeAccess())
+    var fired = false
+    c.onHotKeysChange = { fired = true }
+    var s = c.settings
+    s.openMenuShortcut = HotKey(keyCode: 17, command: true)  // ⌘T
+    c.updateSettings(s)
+    #expect(fired == true)
+    #expect(c.settings.openMenuShortcut.displayString == "⌘T")
+}
+
+@Test @MainActor func unrelatedSettingChangeDoesNotFireHotKeysChange() {
+    let c = makeController(clipboard: FakeClipboard(), prefs: FakePrefs(), access: FakeAccess())
+    var fired = false
+    c.onHotKeysChange = { fired = true }
+    var s = c.settings
+    s.copyOnScreenshot.toggle()
+    c.updateSettings(s)
+    #expect(fired == false)
+}
+
 @Test @MainActor func newScreenshotIsNotCopiedWhenToggleOff() {
     let clip = FakeClipboard()
     let c = makeController(clipboard: clip, prefs: FakePrefs(), access: FakeAccess())

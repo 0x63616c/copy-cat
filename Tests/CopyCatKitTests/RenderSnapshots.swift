@@ -76,6 +76,16 @@ final class RenderSnapshots: XCTestCase {
             to: "popover-no-access.png")
     }
 
+    func testRenderSettingsWithShortcuts() throws {
+        let controller = AppController(
+            store: makeTempStore(), clipboard: FakeClipboard(),
+            prefs: FakePrefs(), access: FakeAccess())
+        controller.openSettings()
+        try render(
+            PopoverRootView().environmentObject(controller).frame(width: 620, height: 460),
+            to: "popover-settings-shortcuts.png")
+    }
+
     func testRenderNotSavingBanner() throws {
         try render(
             NotSavingBanner(onEnable: {}, onDisableThumbnail: {})

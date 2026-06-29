@@ -13,6 +13,7 @@ struct SettingsView: View {
     var body: some View {
         Form {
             captureSection
+            shortcutsSection
             librarySection
             diagnosticsSection
         }
@@ -36,6 +37,23 @@ struct SettingsView: View {
             Text("Capture")
         } footer: {
             Text("When a new screenshot appears, copy it to the clipboard automatically.")
+        }
+    }
+
+    private var shortcutsSection: some View {
+        Section {
+            ShortcutRecorderView(
+                title: "Open CopyCat",
+                systemImage: "menubar.arrow.up.rectangle",
+                shortcut: setting(\.openMenuShortcut))
+            ShortcutRecorderView(
+                title: "Copy last screenshot",
+                systemImage: "doc.on.clipboard",
+                shortcut: setting(\.copyLastShortcut))
+        } header: {
+            Text("Shortcuts")
+        } footer: {
+            Text("Global hotkeys that work from any app. Click a shortcut, then press the new keys (must include a modifier). ⎋ cancels.")
         }
     }
 
@@ -90,6 +108,76 @@ struct SettingsView: View {
                 next[keyPath: keyPath] = newValue
                 controller.updateSettings(next)
             })
+    }
+}
+
+/// A row that displays a `HotKey` and, on click, records a new one
+/// from the next modified keypress. While recording it installs a local keyDown
+/// monitor on the popover's key window; the first key with a modifier wins, ⎋
+/// cancels. Stays pure data — it never touches Carbon (that's `GlobalHotKeys`).
+struct ShortcutRecorderView: View {
+    let title: String
+    let systemImage: String
+    @Binding var shortcut: HotKey
+
+    @State private var isRecording = false
+    @State private var monitor: Any?
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Label(title, systemImage: systemImage)
+            Spacer(minLength: 8)
+            Button(action: toggle) {
+                Text(isRecording ? "Type shortcut…" : shortcut.displayString)
+                    .font(.system(.callout, design: .monospaced))
+                    .foregroundStyle(isRecording ? Color.accentColor : .primary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(
+                        isRecording ? Color.accentColor.opacity(0.18) : Color.primary.opacity(0.08),
+                        in: RoundedRectangle(cornerRadius: 6))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .strokeBorder(isRecording ? Color.accentColor : .clear, lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+            .help("Click, then press a new key combination")
+        }
+        .onDisappear { stop() }
+    }
+
+    private func toggle() {
+        if isRecording { stop() } else { start() }
+    }
+
+    private func start() {
+        isRecording = true
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            let flags = event.modifierFlags
+            let candidate = HotKey(
+                keyCode: event.keyCode,
+                command: flags.contains(.command),
+                control: flags.contains(.control),
+                option: flags.contains(.option),
+                shift: flags.contains(.shift))
+            // ⎋ with no modifiers cancels recording.
+            if event.keyCode == 53 && !candidate.hasModifier {
+                stop()
+                return nil
+            }
+            // Require at least one modifier; otherwise keep listening (a bare key
+            // would be a poor global hotkey and would hijack normal typing).
+            guard candidate.hasModifier else { return nil }
+            shortcut = candidate
+            stop()
+            return nil  // consume so the key doesn't leak to the popover
+        }
+    }
+
+    private func stop() {
+        if let monitor { NSEvent.removeMonitor(monitor) }
+        monitor = nil
+        isRecording = false
     }
 }
 

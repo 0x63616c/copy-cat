@@ -9,6 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private let controller = AppController()
     private let previewWC = PreviewWindowController()
     private var escMonitor: Any?
+    private let hotKeys = GlobalHotKeys()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         controller.start()
@@ -24,6 +25,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         controller.onHoverChange = { [weak self] shot in self?.updatePreview(shot) }
         controller.onSettingsChange = { [weak self] in self?.applyNavigation() }
         controller.onChooseFolder = { [weak self] in self?.presentFolderPicker() }
+        controller.onHotKeysChange = { [weak self] in self?.registerHotKeys() }
+        registerHotKeys()
 
         popover.behavior = .transient
         // Force a dark appearance so the popover's arrow and body share one
@@ -170,6 +173,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         } else {
             controller.folderPickerCancelled()
         }
+    }
+
+    /// (Re)registers the global hotkeys from the current settings. The open
+    /// shortcut toggles the popover; the copy shortcut copies the newest shot.
+    private func registerHotKeys() {
+        hotKeys.reload(
+            open: controller.settings.openMenuShortcut,
+            openAction: { [weak self] in self?.togglePopoverFromHotKey() },
+            copyLast: controller.settings.copyLastShortcut,
+            copyAction: { [weak self] in self?.controller.copyLastScreenshot() })
+    }
+
+    /// Opens (or closes) the popover in response to the global open hotkey.
+    private func togglePopoverFromHotKey() {
+        guard let button = statusItem?.button else { return }
+        AppLog.shared.info("open-menu hotkey → \(popover.isShown ? "closing" : "opening") popover")
+        togglePopover(button)
     }
 
     @objc private func togglePopover(_ sender: NSStatusBarButton) {

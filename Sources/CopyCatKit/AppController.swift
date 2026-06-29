@@ -23,6 +23,9 @@ public final class AppController: ObservableObject {
     /// Invoked on the main actor when navigation changes (settings open/close),
     /// so the shell can resize the live popover without a reopen.
     public var onSettingsChange: (() -> Void)?
+    /// Invoked on the main actor when a global hotkey binding changes, so the
+    /// shell can re-register the Carbon hotkeys with the new key combos.
+    public var onHotKeysChange: (() -> Void)?
     /// Invoked on the main actor when a view asks to pick the watch folder. The
     /// AppKit shell owns this so it can pin the popover open across the modal
     /// NSOpenPanel, then resume normal click-outside dismissal.
@@ -146,6 +149,18 @@ public final class AppController: ObservableObject {
         flashCopied(shot.id)
     }
 
+    /// Copies the newest screenshot to the clipboard. Invoked by the global
+    /// "copy last" hotkey, which can fire while the popover is closed.
+    public func copyLastScreenshot() {
+        guard let newest = screenshots.first else {
+            log.warn("copy-last hotkey: no screenshots to copy")
+            return
+        }
+        clipboard.copyImage(at: newest.url)
+        log.info("copy-last hotkey: \(newest.url.lastPathComponent) → copied to clipboard")
+        flashCopied(newest.id)
+    }
+
     /// Briefly marks `id` as just-copied so the grid can show a confirmation.
     private func flashCopied(_ id: Screenshot.ID) {
         justCopiedID = id
@@ -204,6 +219,11 @@ public final class AppController: ObservableObject {
             log.info("watch folder changed → \(watchFolder)")
             lastLoggedAccess = nil  // re-log access state for the new folder
             detector?.update(folderPath: watchFolder)
+        }
+        if settings.openMenuShortcut != old.openMenuShortcut
+            || settings.copyLastShortcut != old.copyLastShortcut {
+            log.info("hotkeys changed → open=\(settings.openMenuShortcut.displayString) copyLast=\(settings.copyLastShortcut.displayString)")
+            onHotKeysChange?()
         }
         refreshStatus()
     }
