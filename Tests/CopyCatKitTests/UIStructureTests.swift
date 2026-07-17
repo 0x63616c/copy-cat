@@ -35,7 +35,7 @@ final class UIStructureTests: XCTestCase {
             systemImage: "menubar.arrow.up.rectangle",
             shortcut: .constant(.hyper(7)))  // ⌃⌥⇧⌘X
         XCTAssertNoThrow(try view.inspect().find(text: "Open CopyCat"))
-        XCTAssertNoThrow(try view.inspect().find(text: "⌃⌥⇧⌘X"))
+        XCTAssertNoThrow(try view.inspect().find(text: "HYPR\u{200A}X"))
     }
 
     func testShortcutRecorderRendersCustomCombo() throws {

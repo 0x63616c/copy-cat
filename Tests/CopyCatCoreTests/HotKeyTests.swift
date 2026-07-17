@@ -9,9 +9,9 @@ final class KeyboardShortcutTests: XCTestCase {
     }
 
     func testHyperDisplayString() {
-        // The Hyper combo collapses to the single ✦ glyph.
-        XCTAssertEqual(HotKey.hyper(7).displayString, "✦X")
-        XCTAssertEqual(HotKey.hyper(8).displayString, "✦C")
+        // The Hyper combo collapses to the "HYPR" label.
+        XCTAssertEqual(HotKey.hyper(7).displayString, "HYPR\u{200A}X")
+        XCTAssertEqual(HotKey.hyper(8).displayString, "HYPR\u{200A}C")
     }
 
     func testModifierOrderInDisplay() {
