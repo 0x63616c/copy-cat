@@ -158,15 +158,17 @@ public final class AppController: ObservableObject {
         }
         clipboard.copyImage(at: newest.url)
         log.info("copy-last hotkey: \(newest.url.lastPathComponent) → copied to clipboard")
-        flashCopied(newest.id)
+        // Longer flash: the popover has just animated open, so hold the "Copied"
+        // overlay long enough for the user to actually see it.
+        flashCopied(newest.id, duration: 1_400_000_000)
     }
 
     /// Briefly marks `id` as just-copied so the grid can show a confirmation.
-    private func flashCopied(_ id: Screenshot.ID) {
+    private func flashCopied(_ id: Screenshot.ID, duration: UInt64 = 550_000_000) {
         justCopiedID = id
         copyFlashTask?.cancel()
         copyFlashTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 550_000_000)
+            try? await Task.sleep(nanoseconds: duration)
             guard !Task.isCancelled else { return }
             self?.justCopiedID = nil
         }

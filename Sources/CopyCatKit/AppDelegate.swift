@@ -182,7 +182,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             open: controller.settings.openMenuShortcut,
             openAction: { [weak self] in self?.togglePopoverFromHotKey() },
             copyLast: controller.settings.copyLastShortcut,
-            copyAction: { [weak self] in self?.controller.copyLastScreenshot() })
+            copyAction: { [weak self] in self?.copyLastFromHotKey() })
+    }
+
+    /// Copy-last hotkey: open the menu (if closed) so the grid is visible, then
+    /// copy the newest shot — the flashed "Copied" overlay confirms it landed.
+    private func copyLastFromHotKey() {
+        guard let button = statusItem?.button else { return }
+        if !popover.isShown {
+            AppLog.shared.info("copy-last hotkey → opening popover to show confirmation")
+            togglePopover(button)
+        }
+        controller.copyLastScreenshot()
     }
 
     /// Opens (or closes) the popover in response to the global open hotkey.

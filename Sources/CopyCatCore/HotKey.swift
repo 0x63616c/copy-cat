@@ -38,9 +38,19 @@ public struct HotKey: Codable, Equatable, Sendable {
     /// keypress and hijack normal typing system-wide.
     public var hasModifier: Bool { command || control || option || shift }
 
-    /// Human-readable form, e.g. "⌃⌥⇧⌘X". Modifier order matches Apple's
-    /// convention (Control, Option, Shift, Command), key glyph last.
+    /// Single glyph shown when all four modifiers are held ("Hyper"). No Unicode
+    /// codepoint means "hyper", so we borrow ✦ — the mark the Hyperkey/Raycast
+    /// community has settled on — instead of spelling out ⌃⌥⇧⌘ every time.
+    public static let hyperGlyph = "✦"
+
+    /// True when this is the Hyper combo (all four modifiers).
+    public var isHyper: Bool { command && control && option && shift }
+
+    /// Human-readable form, e.g. "⌃⌥⇧⌘X" — or "✦X" for the Hyper combo.
+    /// Modifier order matches Apple's convention (Control, Option, Shift,
+    /// Command), key glyph last.
     public var displayString: String {
+        if isHyper { return Self.hyperGlyph + Self.keyName(for: keyCode) }
         var s = ""
         if control { s += "⌃" }
         if option { s += "⌥" }

@@ -9,14 +9,16 @@ final class KeyboardShortcutTests: XCTestCase {
     }
 
     func testHyperDisplayString() {
-        XCTAssertEqual(HotKey.hyper(7).displayString, "⌃⌥⇧⌘X")
-        XCTAssertEqual(HotKey.hyper(8).displayString, "⌃⌥⇧⌘C")
+        // The Hyper combo collapses to the single ✦ glyph.
+        XCTAssertEqual(HotKey.hyper(7).displayString, "✦X")
+        XCTAssertEqual(HotKey.hyper(8).displayString, "✦C")
     }
 
     func testModifierOrderInDisplay() {
-        // Control, Option, Shift, Command order regardless of how set.
-        let s = HotKey(keyCode: 0, command: true, control: true, option: true, shift: true)
-        XCTAssertEqual(s.displayString, "⌃⌥⇧⌘A")
+        // Control, Option, Shift order regardless of how set (not the Hyper
+        // combo — that renders as ✦).
+        let s = HotKey(keyCode: 0, control: true, option: true, shift: true)
+        XCTAssertEqual(s.displayString, "⌃⌥⇧A")
     }
 
     func testHasModifier() {
