@@ -97,7 +97,8 @@ public final class ScreenshotDetector {
             Task { @MainActor in self?.scheduleScan() }
         }
         src.setEventHandler(handler: onEvent)
-        src.setCancelHandler { close(fd) }
+        let onCancel: @Sendable () -> Void = { close(fd) }
+        src.setCancelHandler(handler: onCancel)
         source = src
         src.resume()
     }
