@@ -7,7 +7,10 @@
   <p><a href="https://github.com/0x63616c/copy-cat/actions/workflows/ci.yml"><img src="https://github.com/0x63616c/copy-cat/actions/workflows/ci.yml/badge.svg" alt="CI status"></a> <a href="https://github.com/0x63616c/copy-cat/releases"><img src="https://img.shields.io/github/v/release/0x63616c/copy-cat" alt="Latest release"></a> <img src="https://img.shields.io/badge/macOS-14%2B-232721" alt="macOS 14 or later"> <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-305642" alt="MIT license"></a></p>
 </div>
 
-<p align="center"><img src="site/assets/settings.png" width="805" alt="CopyCat’s real screenshot library and Settings pane, including Open at Login and the version footer. Sample image content."></p>
+<p align="center"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="site/assets/settings-dark.png">
+  <img src="site/assets/settings.png" width="801" alt="CopyCat’s screenshot library and native Settings, including Open at Login, update controls, and version. Sample captures.">
+</picture></p>
 
 ## Features
 
@@ -40,12 +43,12 @@ Use `⇧⌘3` or `⇧⌘4` to capture your screen. If macOS asks for access to y
 | --- | --- |
 | Copy a recent screenshot | Click its tile in the menu bar library |
 | Preview a screenshot | Hover over its tile |
-| Reveal the original | Right-click a tile → Open in Finder |
+| Reveal the original | Right-click a tile → Show in Finder |
 | Open the library | Default: Hyper + X |
 | Copy the latest capture | Default: Hyper + C |
 | Change shortcuts | Settings → Shortcuts |
 | Start automatically | Settings → General → Open at Login |
-| Check for updates | Bottom of Settings → Check for Updates… |
+| Check for updates | Settings → Updates → Check for Updates… |
 | Configure automatic updates | Settings → Updates |
 | Find your version or quit | Bottom of Settings |
 

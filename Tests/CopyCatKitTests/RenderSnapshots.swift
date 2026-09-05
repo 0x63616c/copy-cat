@@ -31,13 +31,13 @@ final class RenderSnapshots: XCTestCase {
         }
     }
 
-    private func capture(_ view: some View, size: CGSize, name: String) async throws {
-        let host = NSHostingView(rootView: view.environment(\.colorScheme, .light)
+    private func capture(_ view: some View, size: CGSize, name: String, scheme: ColorScheme = .light) async throws {
+        let host = NSHostingView(rootView: view.environment(\.colorScheme, scheme)
             .frame(width: size.width, height: size.height)
-            .background(Color(red: 0.93, green: 0.95, blue: 0.98)))
+            .background(scheme == .dark ? Color(red: 0.12, green: 0.13, blue: 0.15) : Color(red: 0.96, green: 0.97, blue: 0.98)))
         let window = NSWindow(contentRect: NSRect(origin: CGPoint(x: 200, y: 200), size: size), styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
-        window.appearance = NSAppearance(named: .aqua)
+        window.appearance = NSAppearance(named: scheme == .dark ? .darkAqua : .aqua)
         window.contentView = host
         window.orderFront(nil)
         defer { window.close() }
@@ -73,10 +73,18 @@ final class RenderSnapshots: XCTestCase {
                 PopoverRootView(loginItem: LoginItem(readStatus: { .notRegistered }))
                     .environmentObject(controller).environmentObject(UpdateManager())
                     .frame(width: size.width, height: size.height)
-            }.padding(12), size: CGSize(width: 1046, height: 510), name: "product.png")
+            }.padding(12), size: CGSize(width: 1064, height: max(size.height + 24, 510)), name: "product.png")
+        try await capture(PopoverRootView(loginItem: LoginItem(readStatus: { .notRegistered })).environmentObject(controller).environmentObject(UpdateManager()), size: size, name: "library-dark.png", scheme: .dark)
         controller.openSettings()
         let settingsSize = PopoverMetrics.size(columns: AppSettings.gridColumns, rows: AppSettings.gridRows, count: controller.screenshots.count, banner: false, settings: true)
         try await capture(PopoverRootView(loginItem: LoginItem(readStatus: { .notRegistered })).environmentObject(controller).environmentObject(UpdateManager()), size: settingsSize, name: "settings.png")
+        try await capture(PopoverRootView(loginItem: LoginItem(readStatus: { .notRegistered })).environmentObject(controller).environmentObject(UpdateManager()), size: settingsSize, name: "settings-dark.png", scheme: .dark)
+        let access = FakeAccess()
+        access.readable = false
+        let recovery = AppController(store: makeTempStore(), clipboard: FakeClipboard(), prefs: FakePrefs(), access: access)
+        recovery.refreshStatus()
+        let recoverySize = PopoverMetrics.size(columns: AppSettings.gridColumns, rows: AppSettings.gridRows, count: 0, banner: false, settings: false)
+        try await capture(PopoverRootView(loginItem: LoginItem(readStatus: { .notRegistered })).environmentObject(recovery).environmentObject(UpdateManager()), size: recoverySize, name: "recovery.png")
     }
 }
 
@@ -144,7 +152,7 @@ private struct ProductFixture: View {
             VStack(alignment: .leading, spacing: 22) {
                 Text("September 5, 2026").font(.system(size: 13)).foregroundStyle(.gray)
                 Text(index == 3 ? "Release notes" : "Design review").font(.system(size: 36, weight: .bold))
-                Text("CopyCat 0.2.0").font(.system(size: 20, weight: .semibold))
+                Text("CopyCat \(CopyCatCore.version)").font(.system(size: 20, weight: .semibold))
                 Divider()
                 ForEach(["Open at Login", "Native Liquid Glass controls", "Automatic updates", "Keyboard shortcuts"], id: \.self) { text in
                     Label(text, systemImage: "checkmark.circle").font(.system(size: 21)).foregroundStyle(.secondary)

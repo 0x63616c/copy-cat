@@ -15,15 +15,14 @@ struct SettingsView: View {
     var body: some View {
         Form {
             generalSection
-            captureSection
-            shortcutsSection
             updatesSection
+            shortcutsSection
             librarySection
             diagnosticsSection
         }
         .formStyle(.grouped)
         .environment(\.font, .system(size: 13))
-        // Drop the grouped form's opaque background so the popover's dark
+        // Drop the grouped form's opaque background so the popover's
         // material shows through, matching the grid column beside it. The
         // section "cards" keep their own subtle fills.
         .scrollContentBackground(.hidden)
@@ -39,6 +38,12 @@ struct SettingsView: View {
 
     private var updatesSection: some View {
         Section {
+            HStack {
+                Label("Software Update", systemImage: "arrow.down.circle")
+                Spacer()
+                Button("Check for Updates…") { updates.checkForUpdates() }
+                    .controlSize(.small).disabled(!updates.canCheck)
+            }
             Toggle(isOn: Binding(get: { updates.automaticallyChecks }, set: { updates.setAutomaticallyChecks($0) })) {
                 Label("Check for updates automatically", systemImage: "arrow.triangle.2.circlepath")
             }
@@ -55,7 +60,7 @@ struct SettingsView: View {
         } header: {
             Text("Updates")
         } footer: {
-            Text("Checks daily. Automatic updates download in the background and install when you quit.")
+            Text("Checks daily. Downloads install when you quit.")
         }
     }
 
@@ -63,6 +68,10 @@ struct SettingsView: View {
         Section {
             Toggle(isOn: Binding(get: { loginItem.isOn }, set: { loginItem.setEnabled($0) })) {
                 Label("Open at Login", systemImage: "power")
+            }
+            .toggleStyle(PillToggleStyle())
+            Toggle(isOn: setting(\.copyOnScreenshot)) {
+                Label("Copy on screenshot", systemImage: "camera.viewfinder")
             }
             .toggleStyle(PillToggleStyle())
             if loginItem.status == .requiresApproval {
@@ -80,42 +89,26 @@ struct SettingsView: View {
             }
         } header: {
             Text("General")
-        } footer: {
-            Text("Keep CopyCat ready whenever you log in to your Mac.")
         }
     }
 
     private var aboutFooter: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "cat.fill").font(.title2).foregroundStyle(.secondary)
+        HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
-                Text("CopyCat").font(.callout.weight(.semibold))
-                Text("Version \(CopyCatCore.installedVersion)\(CopyCatCore.build.map { " (\($0))" } ?? " · Development")")
-                    .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
-                Text("World Wide Webb").font(.caption2).foregroundStyle(.secondary)
-                Button("Check for Updates…") { updates.checkForUpdates() }
-                    .font(.caption).buttonStyle(.link).disabled(!updates.canCheck)
+                Text("CopyCat \(CopyCatCore.installedVersion)\(CopyCatCore.build.map { " (\($0))" } ?? " · Development")")
+                    .font(.caption).textSelection(.enabled)
+                Text("World Wide Webb").font(.caption2)
             }
+            .foregroundStyle(.secondary)
             Spacer()
-            Button("Quit") { NSApplication.shared.terminate(nil) }
-                .help("Quit CopyCat").accessibilityLabel("Quit CopyCat")
+            Button("Quit CopyCat") { NSApplication.shared.terminate(nil) }
+                .controlSize(.small)
         }
-        .padding(14)
-        .modifier(GlassSurface(cornerRadius: 20))
-        .padding(10)
-    }
-
-    private var captureSection: some View {
-        Section {
-            Toggle(isOn: setting(\.copyOnScreenshot)) {
-                Label("Copy on screenshot", systemImage: "camera.viewfinder")
-            }
-            .toggleStyle(PillToggleStyle())
-        } header: {
-            Text("Capture")
-        } footer: {
-            Text("New screenshots go straight to your clipboard. The original file stays put.")
-        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
+        .background(.bar)
+        .overlay(alignment: .top) { Divider() }
     }
 
     private var shortcutsSection: some View {
@@ -131,7 +124,7 @@ struct SettingsView: View {
         } header: {
             Text("Shortcuts")
         } footer: {
-            Text("Click to record a global shortcut. Include ⌘, ⌥, ⌃ or ⇧. Esc cancels. HYPR means all four.")
+            Text("Click a shortcut to change it. HYPR is ⌃⌥⇧⌘. Esc cancels.")
         }
     }
 
@@ -264,6 +257,7 @@ struct ShortcutRecorderView: View {
 /// `NSSwitch` layout bug that survives activating/keying the window. Drawing the
 /// control ourselves sidesteps it entirely and animates more smoothly.
 struct PillToggleStyle: ToggleStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     func makeBody(configuration: Configuration) -> some View {
         Button { configuration.isOn.toggle() } label: {
             HStack(spacing: 12) {
@@ -277,7 +271,7 @@ struct PillToggleStyle: ToggleStyle {
                         .offset(x: configuration.isOn ? 8 : -8)
                 }
                 .frame(width: 38, height: 22)
-                .animation(.spring(response: 0.28, dampingFraction: 0.72), value: configuration.isOn)
+                .animation(reduceMotion ? nil : .snappy(duration: 0.2), value: configuration.isOn)
                 .accessibilityHidden(true)
             }
             .contentShape(Rectangle())

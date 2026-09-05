@@ -28,7 +28,8 @@ struct FloatingPreview: View {
                     .frame(width: fitted.width, height: fitted.height)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
-                HStack(spacing: 6) {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 6) {
                     Text(Self.dateFormatter.string(from: shot.captureDate))
                     Text("(\(compactRelativeAge(from: shot.captureDate, now: now)))")
                         .monospacedDigit()
@@ -38,8 +39,13 @@ struct FloatingPreview: View {
                             .monospacedDigit()
                     }
                 }
-                .font(.cc(Typo.callout))
-                .foregroundStyle(.primary.opacity(0.78))
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(Self.dateFormatter.string(from: shot.captureDate)).lineLimit(1).truncationMode(.middle)
+                        if let pixelSize { Text("\(Int(pixelSize.width)) × \(Int(pixelSize.height))").monospacedDigit() }
+                    }
+                }
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
                 .frame(width: fitted.width)
             }
             .padding(PreviewMetrics.padding)

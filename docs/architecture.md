@@ -28,7 +28,7 @@ Settings and bookmarks live under `~/Library/Application Support/copy-cat/`. `Ap
 
 ## Appearance
 
-Glass is reserved for navigation controls and the pinned Settings footer. On macOS 26, these use native `glassEffect`; macOS 14/15 use regular materials. The app follows system light/dark appearance and honors Reduce Transparency; the SwiftUI pane transition honors Reduce Motion. The original screenshot imagery is never tinted with glass. Build with Xcode 26.2+ to include the native glass path.
+Glass is reserved for navigation controls. On macOS 26, these controls use native `glassEffect`; macOS 14/15 use regular materials. The app follows system light/dark appearance and honors Reduce Transparency; the SwiftUI pane transition honors Reduce Motion. The original screenshot imagery is never tinted with glass. Build with Xcode 26.2+ to include the native glass path.
 
 ## Updates
 

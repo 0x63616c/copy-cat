@@ -69,34 +69,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         }
     }
 
-    /// The cat silhouette template glyph for the menu bar, loaded from the app bundle.
-    ///
-    /// The source PDF carries ~18% of empty margin on every side, which makes the
-    /// silhouette render about half its intended size in the bar. We crop that margin
-    /// off and redraw the inner region to fill the full 18pt box.
+    /// The vector template adapts automatically to light and dark menu bars.
     private static func menuBarCatImage() -> NSImage? {
         guard let url = Bundle.main.url(forResource: "menubar-cat", withExtension: "pdf"),
-              let source = NSImage(contentsOf: url) else { return nil }
-
-        let target = NSSize(width: 18, height: 18)
-        let inset: CGFloat = 0.18  // trim 18% off each side
-        let src = source.size
-        let cropRect = NSRect(
-            x: src.width * inset,
-            y: src.height * inset,
-            width: src.width * (1 - 2 * inset),
-            height: src.height * (1 - 2 * inset)
-        )
-
-        let cropped = NSImage(size: target)
-        cropped.lockFocus()
-        source.draw(in: NSRect(origin: .zero, size: target),
-                    from: cropRect,
-                    operation: .sourceOver,
-                    fraction: 1.0)
-        cropped.unlockFocus()
-        cropped.isTemplate = true
-        return cropped
+              let image = NSImage(contentsOf: url) else { return nil }
+        image.size = NSSize(width: 18, height: 18 * image.size.height / image.size.width)
+        image.isTemplate = true
+        image.accessibilityDescription = "CopyCat"
+        return image
     }
 
     private func updatePreview(_ shot: Screenshot?) {

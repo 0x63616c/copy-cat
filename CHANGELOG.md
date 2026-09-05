@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0 — 2026-09-05
+
+- Redesign the library with larger landscape thumbnails, visible capture ages, keyboard preview, and Copy Latest.
+- Move Check for Updates into the Updates section and simplify the version/footer layout.
+- Apply the new CopyCat identity across the app icon, menu bar, website, and README.
+- Refine light/dark styling, reduced-motion behavior, and narrow-image previews.
+
 ## 0.2.2 — 2026-09-05
 
 - Include CopyCat and Sparkle license notices inside the distributed app bundle.

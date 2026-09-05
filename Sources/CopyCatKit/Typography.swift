@@ -2,9 +2,9 @@ import SwiftUI
 
 /// Single source of truth for the app-wide text scale. Every text style routes
 /// through `Font.cc(...)` (or the root `.environment(\.font, .cc(13))`), so the
-/// whole UI's type size is one number. Currently +20% over the macOS defaults.
+/// whole UI's type size is one number. Uses native macOS point sizes.
 enum Typo {
-    static let scale: CGFloat = 1.2
+    static let scale: CGFloat = 1.0
 
     /// Base macOS point sizes, kept here so call sites read semantically.
     static let body: CGFloat = 13

@@ -3,7 +3,7 @@ import SwiftUI
 struct EmptyStateView: View {
     var body: some View {
         VStack(spacing: 8) {
-            Image(systemName: "cat").font(.largeTitle).foregroundStyle(.secondary)
+            Image(systemName: "photo.on.rectangle").font(.largeTitle).foregroundStyle(.secondary)
             Text("No screenshots yet.").font(.cc(Typo.headline, weight: .semibold))
             Text("Press ⌘⇧3 or ⌘⇧4 to take one.").font(.cc(Typo.subheadline)).foregroundStyle(.secondary)
         }
@@ -16,13 +16,15 @@ struct NotSavingBanner: View {
     let onDisableThumbnail: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.yellow)
-            Text("Screenshots aren't being saved to disk.").font(.cc(Typo.callout))
-            Spacer()
-            Button("Enable", action: onEnable).buttonStyle(.borderedProminent).controlSize(.small)
-            Button("Hide thumbnail", action: onDisableThumbnail).buttonStyle(.bordered).controlSize(.small)
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Screenshots aren’t being saved to files.", systemImage: "exclamationmark.triangle")
+                .font(.cc(Typo.callout))
+            HStack {
+                Button("Enable", action: onEnable).buttonStyle(.borderedProminent).controlSize(.small)
+                Button("Hide thumbnail", action: onDisableThumbnail).buttonStyle(.bordered).controlSize(.small)
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
         .background(.yellow.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
         .padding([.horizontal, .top], 10)

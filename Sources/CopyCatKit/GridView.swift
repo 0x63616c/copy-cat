@@ -27,6 +27,10 @@ struct GridView: View {
     let onReveal: (Screenshot) -> Void
     let onCopyPath: (Screenshot) -> Void
 
+    @State private var hoveredID: Screenshot.ID?
+    @FocusState private var focusedID: Screenshot.ID?
+    private var previewID: Screenshot.ID? { hoveredID ?? focusedID }
+
     private var gridColumns: [GridItem] {
         Array(
             repeating: GridItem(.fixed(PopoverMetrics.tile), spacing: PopoverMetrics.gap, alignment: .topLeading),
@@ -41,16 +45,27 @@ struct GridView: View {
                     GridTile(
                         shot: shot,
                         copied: justCopiedID == shot.id,
+                        focused: focusedID == shot.id,
                         age: compactRelativeAge(from: shot.captureDate, now: now),
-                        onHover: onHover,
+                        onHover: { hovered in
+                            if hovered != nil { hoveredID = shot.id }
+                            else if hoveredID == shot.id { hoveredID = nil }
+                        },
                         onClick: onClick,
                         onReveal: onReveal,
                         onCopyPath: onCopyPath)
+                        .focused($focusedID, equals: shot.id)
                 }
             }
             .padding(PopoverMetrics.gap)
             .frame(maxWidth: .infinity, alignment: .top)
             .background(OverlayScrollers())
+        }
+        .onHover { inside in if !inside { hoveredID = nil } }
+        .onChange(of: previewID) { _, id in onHover(screenshots.first { $0.id == id }) }
+        .onDisappear { hoveredID = nil; focusedID = nil; onHover(nil) }
+        .onReceive(NotificationCenter.default.publisher(for: NSPopover.didCloseNotification)) { _ in
+            hoveredID = nil; focusedID = nil; onHover(nil)
         }
         // Partial top/bottom rows dissolve instead of being hard-clipped, so the
         // edge reads as "scroll for more" rather than a rendering glitch. The
@@ -72,106 +87,67 @@ struct GridView: View {
     }
 }
 
-/// A single screenshot tile. Owns its hover state so it can reveal the copy
-/// affordance and age without re-rendering the whole grid.
+/// Image-first card with persistent capture age and equivalent pointer/keyboard feedback.
 private struct GridTile: View {
     let shot: Screenshot
     let copied: Bool
+    let focused: Bool
     let age: String
     let onHover: (Screenshot?) -> Void
     let onClick: (Screenshot) -> Void
     let onReveal: (Screenshot) -> Void
     let onCopyPath: (Screenshot) -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var hovering = false
-
-    private let radius: CGFloat = 8
+    private var highlighted: Bool { hovering || focused }
+    private let radius: CGFloat = 10
 
     var body: some View {
         Button { onClick(shot) } label: {
-        ScreenshotImage(url: shot.url, contentMode: .fill, maxPixel: Int(PopoverMetrics.tile * 3))
-            // Top-anchored so the meaningful top of a screenshot survives the
-            // square crop instead of being centered away.
-            .frame(width: PopoverMetrics.tile, height: PopoverMetrics.tile, alignment: .topLeading)
-            .clipped()
-            .clipShape(RoundedRectangle(cornerRadius: radius))
-            // Subtle border so bright web pages don't glow louder than dark shots.
-            .overlay(
-                RoundedRectangle(cornerRadius: radius)
-                    .strokeBorder(.white.opacity(0.10), lineWidth: 1)
-            )
-            // Brighter accent ring on hover so the focused tile reads clearly.
-            .overlay(
-                RoundedRectangle(cornerRadius: radius)
-                    .strokeBorder(Color.accentColor, lineWidth: 2)
-                    .opacity(hovering && !copied ? 1 : 0)
-            )
-            .overlay { hoverChrome }
-            .overlay { copiedOverlay }
-            .contentShape(RoundedRectangle(cornerRadius: radius))
-            .onHover { inside in
-                hovering = inside
-                onHover(inside ? shot : nil)
-            }
-        }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Copy screenshot, \(shot.url.lastPathComponent)")
-            .accessibilityValue(copied ? "Copied" : age)
-            .contextMenu {
-                Button("Copy image") { onClick(shot) }
-                Button("Open in Finder") { onReveal(shot) }
-                Button("Copy path") { onCopyPath(shot) }
-            }
-            .help("Click to copy")
-            .animation(.easeOut(duration: 0.15), value: hovering)
-            // Snap in fast, fade out even faster.
-            .animation(copied ? .easeOut(duration: 0.10) : .easeIn(duration: 0.06), value: copied)
-    }
-
-    /// Copy glyph (top-right) and age pill (bottom-left), shown on hover.
-    @ViewBuilder private var hoverChrome: some View {
-        ZStack {
-            VStack {
-                HStack {
+            VStack(spacing: 0) {
+                ScreenshotImage(url: shot.url, contentMode: .fill, maxPixel: Int(PopoverMetrics.tile * 3))
+                    .frame(width: PopoverMetrics.tile, height: PopoverMetrics.thumbnailHeight, alignment: .topLeading)
+                    .clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: radius))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: radius)
+                            .strokeBorder(highlighted ? Color.accentColor : Color(nsColor: .separatorColor), lineWidth: highlighted ? 2 : 0.5)
+                    }
+                    .overlay(alignment: .topTrailing) {
+                        if copied {
+                            Label("Copied", systemImage: "checkmark")
+                                .font(.system(size: 10, weight: .semibold))
+                                .padding(.horizontal, 7).padding(.vertical, 5)
+                                .background(.regularMaterial, in: Capsule()).padding(5)
+                        }
+                    }
+                HStack(spacing: 4) {
+                    Text(age).monospacedDigit()
                     Spacer()
-                    Image(systemName: "doc.on.doc.fill")
-                        .font(.cc(9, weight: .bold))
-                        .foregroundStyle(.white)
-                        .padding(4)
-                        .background(.black.opacity(0.55), in: Circle())
+                    Image(systemName: "doc.on.doc").opacity(highlighted ? 1 : 0)
                 }
-                Spacer()
-                HStack {
-                    Text(age)
-                        .font(.cc(9, weight: .semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 2)
-                        .background(.black.opacity(0.55), in: Capsule())
-                    Spacer()
-                }
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 2)
+                .frame(height: PopoverMetrics.cardHeight - PopoverMetrics.thumbnailHeight)
             }
-            .padding(4)
+            .contentShape(Rectangle())
         }
-        .opacity(hovering && !copied ? 1 : 0)
-        .allowsHitTesting(false)
-    }
-
-    /// Green "Copied" confirmation flashed over the tile after a click.
-    @ViewBuilder private var copiedOverlay: some View {
-        RoundedRectangle(cornerRadius: radius)
-            .fill(.black.opacity(0.45))
-            .overlay {
-                VStack(spacing: 4) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 22, weight: .semibold))
-                    Text("Copied")
-                        .font(.cc(Typo.caption2, weight: .semibold))
-                }
-                .foregroundStyle(.white)
-            }
-            .opacity(copied ? 1 : 0)
-            .allowsHitTesting(false)
+        .buttonStyle(.plain)
+        .onHover { inside in
+            hovering = inside
+            onHover(inside ? shot : nil)
+        }
+        .accessibilityLabel("Copy screenshot, \(shot.url.lastPathComponent)")
+        .accessibilityValue(copied ? "Copied" : age)
+        .contextMenu {
+            Button("Copy Image") { onClick(shot) }
+            Button("Show in Finder") { onReveal(shot) }
+            Button("Copy Path") { onCopyPath(shot) }
+        }
+        .help("Click to copy · \(shot.url.lastPathComponent)")
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: highlighted)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: copied)
     }
 }

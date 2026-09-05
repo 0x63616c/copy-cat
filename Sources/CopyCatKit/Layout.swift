@@ -4,23 +4,26 @@ import CopyCatCore
 /// Shared layout constants for the popover, so the SwiftUI grid and the AppKit
 /// popover sizing agree (no magic numbers split across files).
 enum PopoverMetrics {
-    static let tile: CGFloat = 88
-    static let gap: CGFloat = 10
+    static let tile: CGFloat = 124
+    static let thumbnailHeight: CGFloat = 88
+    static let cardHeight: CGFloat = 114
+    static let footerHeight: CGFloat = 44
+    static let gap: CGFloat = 12
     /// Fixed height of the title-row content in each header bar (grid + settings),
     /// so the two titles line up regardless of which trailing control is present.
     static let headerRow: CGFloat = 34
     /// Full header height = headerRow + the bar's top/bottom padding (11 + 9).
     static let headerHeight: CGFloat = headerRow + 11 + 9
-    static let bannerHeight: CGFloat = 60
-    // Hug the fixed 4-column grid exactly (4 tiles + 5 gaps) so there is no
+    static let bannerHeight: CGFloat = 94
+    // Hug the fixed column count and outer gutters so there is no
     // dead space between the last image and the scrollbar. The grid column is
     // pinned to this width so opening Settings doesn't reflow it.
-    static let minWidth: CGFloat = 4 * tile + 5 * gap
-    static let minHeight: CGFloat = 300
+    static let minWidth: CGFloat = CGFloat(AppSettings.gridColumns) * tile + CGFloat(AppSettings.gridColumns + 1) * gap
+    static let minHeight: CGFloat = 360
 
-    /// Settings slides in as a pane on the right, matching the grid column width
-    /// so the popover is symmetric and the grouped form isn't cramped.
-    static let settingsPaneWidth: CGFloat = 4 * tile + 5 * gap
+    /// Settings slides in as a pane on the right, at a stable width
+    /// so the grouped form stays readable.
+    static let settingsPaneWidth: CGFloat = 380
     /// Minimum popover height while the settings pane is open, so the form fits.
     static let settingsMinHeight: CGFloat = 600
 
@@ -30,9 +33,9 @@ enum PopoverMetrics {
         let g = gridLayout(itemCount: count, columns: columns, maxRows: rows)
         // LazyVGrid pads `gap` on every side, so add one extra gap each axis.
         let gridW = CGFloat(g.columns) * tile + CGFloat(g.columns + 1) * gap
-        let gridH = CGFloat(g.visibleRows) * tile + CGFloat(g.visibleRows + 1) * gap
+        let gridH = CGFloat(g.visibleRows) * cardHeight + CGFloat(g.visibleRows + 1) * gap
         var w = max(minWidth, gridW)
-        var h = max(minHeight, headerHeight + (banner ? bannerHeight : 0) + gridH)
+        var h = max(minHeight, headerHeight + footerHeight + (banner ? bannerHeight : 0) + gridH)
         if settings {
             w += 1 + settingsPaneWidth   // +1 for the divider between grid and pane
             h = max(h, settingsMinHeight)

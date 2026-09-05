@@ -55,6 +55,6 @@ jobs:
 
           **Signing:** This community build is ad-hoc signed, not Apple-notarized. macOS may block the first launch. If you trust this release, follow Apple's Privacy & Security → Open Anyway flow. See the installation guide for details. Do not disable Gatekeeper globally.
 
-          In CopyCat Settings, enable **Open at Login** to keep it ready after restarting. The installed version, build, and Check for Updates action appear at the bottom of Settings. Automatic update settings are under Updates. Update archives and feeds are signed with a dedicated Ed25519 key.
+          In CopyCat Settings, enable **Open at Login** to keep it ready after restarting. The installed version and build appear at the bottom of Settings. Check for Updates and automatic update settings are under Updates. Update archives and feeds are signed with a dedicated Ed25519 key.
           NOTES
           gh release create "$RELEASE_TAG" release-artifacts/CopyCat-macOS.zip release-artifacts/SHA256SUMS.txt release-artifacts/appcast.xml --verify-tag --title "CopyCat ${RELEASE_TAG#v}" --notes-file /tmp/release-notes.md --generate-notes

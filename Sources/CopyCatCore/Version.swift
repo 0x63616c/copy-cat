@@ -2,7 +2,7 @@ import Foundation
 
 public enum CopyCatCore {
     /// The release script reads this value; Info.plist is stamped during bundling.
-    public static let version = "0.2.2"
+    public static let version = "0.3.0"
     public static var installedVersion: String {
         appBundle?.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? version
     }

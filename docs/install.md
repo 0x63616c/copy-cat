@@ -28,7 +28,7 @@ Install in Applications before enabling startup. Move or replace the app only af
 
 ## Updating
 
-Download the latest ZIP, quit CopyCat using the button at the bottom of Settings, and replace the copy in Applications. Reopen it. Your saved settings remain in `~/Library/Application Support/copy-cat/`. The version and build number are pinned at the bottom of Settings. Or use **Check for Updates…** at the bottom of Settings. Under **Updates**, automatic checks are on by default (daily); enable **Install updates automatically** to download in the background and install when you quit. Sparkle validates signed update metadata and archives before installation. If authorization is needed, it asks you. Update preferences are stored by Sparkle in macOS user defaults, separately from CopyCat’s JSON settings.
+Download the latest ZIP, quit CopyCat using the button at the bottom of Settings, and replace the copy in Applications. Reopen it. Your saved settings remain in `~/Library/Application Support/copy-cat/`. The version and build number are pinned at the bottom of Settings. Or use **Settings → Updates → Check for Updates…**. Under **Updates**, automatic checks are on by default (daily); enable **Install updates automatically** to download in the background and install when you quit. Sparkle validates signed update metadata and archives before installation. If authorization is needed, it asks you. Update preferences are stored by Sparkle in macOS user defaults, separately from CopyCat’s JSON settings.
 
 ## Troubleshooting
 
