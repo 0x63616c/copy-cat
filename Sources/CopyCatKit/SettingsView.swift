@@ -52,7 +52,7 @@ struct SettingsView: View {
     // MARK: Sections
 
     private var updatesSection: some View {
-        section("Updates", footer: "Checks daily. Downloads install when you quit.") {
+        section("Updates") {
             HStack {
                 Label("Software Update", systemImage: "arrow.down.circle")
                 Spacer()
@@ -118,7 +118,7 @@ struct SettingsView: View {
     }
 
     private var shortcutsSection: some View {
-        section("Shortcuts", footer: "Click a shortcut to change it. HYPR is ⌃⌥⇧⌘. Esc cancels.") {
+        section("Shortcuts") {
             ShortcutRecorderView(
                 title: "Open CopyCat",
                 systemImage: "menubar.arrow.up.rectangle",
@@ -153,10 +153,10 @@ struct SettingsView: View {
 
     private var diagnosticsSection: some View {
         section("Diagnostics") {
-            LabeledContent {
-                Button("Open Logs") { controller.openLogs() }
-            } label: {
+            HStack {
                 Label("Activity log", systemImage: "doc.text.magnifyingglass")
+                Spacer(minLength: 8)
+                Button("Open Logs") { controller.openLogs() }
             }
         }
     }

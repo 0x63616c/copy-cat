@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2 — 2026-09-05
+
+- Tighten the Settings control layout, align Logs with other row actions, and remove redundant helper copy.
+- Give the menu-bar Settings control a consistent compact glass button.
+- Show the current release version on the website download button and verify it stays in sync with releases.
+
 ## 0.3.1 — 2026-09-05
 
 - Restore the dense 4×4 library and reduce toolbar/card spacing.
