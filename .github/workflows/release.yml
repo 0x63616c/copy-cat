@@ -34,7 +34,7 @@ jobs:
         run: ./scripts/bundle.sh
       - name: Package and verify
         run: |
-          lipo -verify_arch arm64 x86_64 CopyCat.app/Contents/MacOS/CopyCat
+          lipo CopyCat.app/Contents/MacOS/CopyCat -verify_arch arm64 x86_64
           codesign --verify --deep --strict CopyCat.app
       - name: Sign update archive and feed
         env:

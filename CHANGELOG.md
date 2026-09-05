@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1 — 2026-09-05
+
+- Correct the universal-architecture verification command in release CI.
+- First published release; 0.2.0 packaging stopped before publication.
+
 ## 0.2.0 — 2026-09-05
 
 - Native **Open at Login** setting, with system approval guidance and visible errors.
