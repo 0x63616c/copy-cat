@@ -10,9 +10,11 @@
 
 Requires macOS 14+. Universal downloads support Apple Silicon and Intel.
 
-## If macOS blocks the first launch
+## Signing and verification
 
-Current CI downloads are **ad-hoc signed, not Apple-notarized**. After attempting to open a trusted release, go to **System Settings → Privacy & Security → Open Anyway**, and confirm the prompt. Follow [Apple’s guide](https://support.apple.com/en-us/102445). Organization policies may prohibit this; use an approved build or build from source instead. Do not disable Gatekeeper globally.
+Releases from **0.3.1** are signed with Developer ID, notarized by Apple, and include a stapled notarization ticket. The release pipeline verifies Gatekeeper acceptance before publishing.
+
+Older releases through 0.3.0 were ad-hoc signed. Prefer the latest notarized release. If macOS still blocks an app, follow [Apple’s guide](https://support.apple.com/en-us/102445); do not disable Gatekeeper globally.
 
 To verify the downloaded ZIP, download `SHA256SUMS.txt` into the same folder and run:
 

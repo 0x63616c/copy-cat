@@ -40,7 +40,7 @@ export NOTARY_PROFILE='your-notary-profile'
 ./scripts/appcast.sh
 ```
 
-The signing helper applies the hardened runtime signature, submits for notarization, staples and validates the ticket, verifies Gatekeeper acceptance, and recreates `CopyCat.zip` **after** stapling. The appcast helper packages the final stapled bundle again and signs that exact archive and feed. Publish all three outputs from `release-artifacts/`; do not reuse the earlier archive or feed. Do not upload signing keys or credentials into the repository. If moving signing into CI later, use protected GitHub secrets and an ephemeral keychain; make a configured signing failure fail the release rather than silently downgrade.
+The signing helper applies the hardened runtime signature, submits for notarization, staples and validates the ticket, verifies Gatekeeper acceptance, and recreates `CopyCat.zip` **after** stapling. The appcast helper packages the final stapled bundle again and signs that exact archive and feed. Publish all three outputs from `release-artifacts/`; do not reuse the earlier archive or feed. Do not upload signing keys or credentials into the repository.
 
 ## GitHub Pages
 

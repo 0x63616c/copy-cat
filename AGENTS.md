@@ -135,6 +135,6 @@ Use Swift 6+. Normal tests must not mutate real login items, preferences, clipbo
 
 Follow the conservative Beads profile unless the user explicitly authorizes commit/push/release. When authorized, validate the exact changes, get an independent agent review if requested, commit only the intended files, push, and verify CI and release/Pages outcomes. Do not treat a local build as a successful deployment.
 
-Release with `scripts/release.sh X.Y.Z` after updating the version/changelog and pushing main. Do not move published tags. The current CI artifact is ad-hoc signed, not notarized; keep website, release notes, and docs honest about that. Never upload signing credentials to source control. See `docs/releases.md`.
+Release with `scripts/release.sh X.Y.Z` after updating the version/changelog and pushing main. Do not move published tags. Releases from 0.3.1 must pass Developer ID signing, Apple notarization, stapling, and Gatekeeper verification before Sparkle signing and publication. Never silently downgrade signing. Never upload signing credentials to source control. See `docs/releases.md`.
 
 Beads failures: preserve existing `.beads` data and report exact errors; do not force-discard remote history to unblock ordinary coding. Use Beads for work tracking; do not introduce markdown task lists. Recovery and any temporary tracking location must be disclosed in the handoff.

@@ -33,7 +33,7 @@ Requires **macOS 14 Sonoma or later**. Release downloads include **Apple Silicon
 2. Move **CopyCat.app** into **Applications**, then open it.
 3. Click the cat in your menu bar. Open **Settings → Open at Login** if you want it to start automatically.
 
-**Community build notice:** GitHub builds are ad-hoc signed, not Apple-notarized. If macOS blocks the first launch and you trust the download, use **System Settings → Privacy & Security → Open Anyway**. See [installation and troubleshooting](docs/install.md), including Apple’s instructions and checksum verification.
+**Developer ID signed and notarized by Apple.** Releases from 0.3.1 include a stapled notarization ticket and signed automatic updates. See [installation and troubleshooting](docs/install.md) for setup and checksum verification.
 
 ## Using CopyCat
 
