@@ -103,3 +103,38 @@ This protocol applies when ending a Beads implementation workflow. It is subordi
 - If a required sync or push is blocked, stop and report the exact command and error.
 <!-- END BEADS INTEGRATION -->
 
+
+## Project and scope
+
+CopyCat is a native macOS 14+ menu bar screenshot utility by World Wide Webb. Favor small, direct Swift/AppKit/SwiftUI solutions. Do not add a service, framework, updater, or dependency unless the task needs it.
+
+## Build and validation
+
+```sh
+swift test
+./scripts/bundle.sh
+./scripts/dev.sh                         # build/relaunch this checkout only
+python3 scripts/check-site.py            # when site assets or links change
+COPYCAT_SCREENSHOTS=1 COPYCAT_SCREEN_CAPTURE=1 swift test --filter RenderSnapshots
+```
+
+Use Swift 6+. Normal tests must not mutate real login items, preferences, clipboard, or screenshot folders. Product rendering is opt-in and uses synthetic fixtures. Inspect generated images before committing. Never use personal screenshots as public assets.
+
+## Architecture and conventions
+
+- `CopyCatCore` holds data and pure logic; `CopyCatKit` holds platform adapters, `AppController`, and SwiftUI views; `CopyCat` boots the app.
+- `PopoverMetrics` is the shared source for view/popover sizing. Keep controls keyboard-accessible and labeled for VoiceOver.
+- macOS owns Open at Login through `SMAppService.mainApp`; do not save a second Boolean in app settings.
+- `Sources/CopyCatCore/Version.swift` is the release version source. Bundle version fields are stamped by `scripts/bundle.sh`; runtime UI reads the running app bundle.
+- Log user-facing actions through `AppLog`, but never add image content, credentials, or unnecessarily sensitive detail. Logs already contain local paths/filenames; redact before sharing.
+- `UpdateManager` uses Sparkle for automatic updates. Never replace signature validation with custom download/install code. Tests and bare executables must not start the updater. Keep release feeds/archives signed, and keep all private signing material out of Git/logs.
+- `site/` is plain static HTML/CSS, published by GitHub Pages. Use relative assets for the repository base path, accessible text, and accurate product claims.
+- `CLAUDE.md` points here. Keep substantive guidance in this file.
+
+## Release and handoff
+
+Follow the conservative Beads profile unless the user explicitly authorizes commit/push/release. When authorized, validate the exact changes, get an independent agent review if requested, commit only the intended files, push, and verify CI and release/Pages outcomes. Do not treat a local build as a successful deployment.
+
+Release with `scripts/release.sh X.Y.Z` after updating the version/changelog and pushing main. Do not move published tags. The current CI artifact is ad-hoc signed, not notarized; keep website, release notes, and docs honest about that. Never upload signing credentials to source control. See `docs/releases.md`.
+
+Beads failures: preserve existing `.beads` data and report exact errors; do not force-discard remote history to unblock ordinary coding. Use Beads for work tracking; do not introduce markdown task lists. Recovery and any temporary tracking location must be disclosed in the handoff.

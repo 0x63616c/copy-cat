@@ -88,10 +88,11 @@ private struct GridTile: View {
     private let radius: CGFloat = 8
 
     var body: some View {
+        Button { onClick(shot) } label: {
         ScreenshotImage(url: shot.url, contentMode: .fill, maxPixel: Int(PopoverMetrics.tile * 3))
             // Top-anchored so the meaningful top of a screenshot survives the
             // square crop instead of being centered away.
-            .frame(width: PopoverMetrics.tile, height: PopoverMetrics.tile, alignment: .top)
+            .frame(width: PopoverMetrics.tile, height: PopoverMetrics.tile, alignment: .topLeading)
             .clipped()
             .clipShape(RoundedRectangle(cornerRadius: radius))
             // Subtle border so bright web pages don't glow louder than dark shots.
@@ -112,7 +113,10 @@ private struct GridTile: View {
                 hovering = inside
                 onHover(inside ? shot : nil)
             }
-            .onTapGesture { onClick(shot) }
+        }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Copy screenshot, \(shot.url.lastPathComponent)")
+            .accessibilityValue(copied ? "Copied" : age)
             .contextMenu {
                 Button("Copy image") { onClick(shot) }
                 Button("Open in Finder") { onReveal(shot) }

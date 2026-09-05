@@ -7,12 +7,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var statusItem: NSStatusItem!
     private let popover = NSPopover()
     private let controller = AppController()
+    private let updates = UpdateManager()
     private let previewWC = PreviewWindowController()
     private var escMonitor: Any?
     private let hotKeys = GlobalHotKeys()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         controller.start()
+        updates.start()
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
@@ -29,16 +31,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         registerHotKeys()
 
         popover.behavior = .transient
-        // Force a dark appearance so the popover's arrow and body share one
-        // material. The old approach darkened only the SwiftUI content with a
-        // translucent black overlay, which left the AppKit-drawn arrow lighter
-        // than the body — a visible seam where they met. Letting the popover
-        // chrome own the dark material means the arrow matches by construction.
-        popover.appearance = NSAppearance(named: .darkAqua)
+        // Let macOS own the material, light/dark appearance, and accessibility.
+        popover.appearance = nil
         popover.delegate = self
         popover.contentSize = popoverSize()
         popover.contentViewController = NSHostingController(
-            rootView: PopoverRootView().environmentObject(controller))
+            rootView: PopoverRootView().environmentObject(controller).environmentObject(updates))
 
         // Esc closes Settings (back to the grid) when it's open, otherwise
         // dismisses the popover entirely. A local monitor reaches the popover's
@@ -119,7 +117,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             // Opening: let AppKit glide the window wider (not an instant snap)
             // while SwiftUI slides the pane into the new space. The grid is
             // pinned left, so the window grows rightward to make room.
-            popover.animates = true
+            popover.animates = !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
             popover.contentSize = popoverSize()
         } else {
             // Closing: let the pane start sliding out, then begin shrinking the
@@ -127,24 +125,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             // symmetric with the open (rather than a two-step "slide, then
             // shrink"). The short lead lets the pane's left edge clear the
             // narrower width before the window edge catches up, avoiding a clip.
-            DispatchQueue.main.asyncAfter(deadline: .now() + Self.paneShrinkLead) { [weak self] in
+            DispatchQueue.main.asyncAfter(deadline: .now() + (NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : Self.paneShrinkLead)) { [weak self] in
                 guard let self, self.popover.isShown, !self.controller.showingSettings else { return }
-                self.popover.animates = true
+                self.popover.animates = !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
                 self.popover.contentSize = self.popoverSize()
             }
         }
     }
 
-    /// Duration of the settings pane slide; kept in sync with the SwiftUI
-    /// `.animation(.smooth(duration:))` in `PopoverRootView`. The SwiftUI side
-    /// is the slower, dominant motion (AppKit's window resize is quicker), which
-    /// is what makes the open/close feel like an unhurried glide.
-    private static let paneSlide: TimeInterval = 0.5
-
-    /// How long the window stays full-width before it starts shrinking on close.
-    /// Less than `paneSlide` so the window collapse overlaps the pane slide-out,
-    /// mirroring the simultaneous grow+slide on open.
-    private static let paneShrinkLead: TimeInterval = 0.22
+    /// A short overlap with the SwiftUI pane transition prevents edge clipping.
+    private static let paneShrinkLead: TimeInterval = 0.12
 
     private func popoverSize() -> NSSize {
         let s = PopoverMetrics.size(

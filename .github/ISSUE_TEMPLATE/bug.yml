@@ -1,0 +1,23 @@
+name: Bug report
+description: Something in CopyCat is not working as expected.
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Describe the result and what you expected. Remove private screenshots and paths.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: CopyCat and macOS versions
+      description: CopyCat version/build is at the bottom of Settings.
+    validations:
+      required: true

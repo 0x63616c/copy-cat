@@ -1,111 +1,88 @@
-# copy-cat
+<div align="center">
+  <img src="site/assets/app-icon.png" alt="CopyCat icon" width="96">
+  <h1>CopyCat</h1>
+  <p><strong>Your screenshots. Already copied.</strong></p>
+  <p>A native Mac utility that copies new screenshots to your clipboard<br>and keeps recent captures one click away.</p>
+  <p><a href="https://0x63616c.github.io/copy-cat/">Website</a> · <a href="https://github.com/0x63616c/copy-cat/releases/latest">Download</a> · <a href="docs/install.md">Installation</a> · <a href="CONTRIBUTING.md">Contribute</a></p>
+  <p><a href="https://github.com/0x63616c/copy-cat/actions/workflows/ci.yml"><img src="https://github.com/0x63616c/copy-cat/actions/workflows/ci.yml/badge.svg" alt="CI status"></a> <a href="https://github.com/0x63616c/copy-cat/releases"><img src="https://img.shields.io/github/v/release/0x63616c/copy-cat" alt="Latest release"></a> <img src="https://img.shields.io/badge/macOS-14%2B-232721" alt="macOS 14 or later"> <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-305642" alt="MIT license"></a></p>
+</div>
 
-A macOS menu bar app that auto-copies every new screenshot to the clipboard and
-gives you a quick-access grid of recent screenshots. The file still saves to disk.
+<p align="center"><img src="site/assets/settings.png" width="805" alt="CopyCat’s real screenshot library and Settings pane, including Open at Login and the version footer. Sample image content."></p>
 
-## Install (build it yourself)
+## Features
 
-There's no prebuilt download yet, so you install copy-cat by building it from
-source. It's a two-minute process on a Mac with the developer tools.
+- **Screenshot → clipboard.** Take a screenshot as usual. Paste it straight into your next message or document.
+- **A library in your menu bar.** Click a capture to copy it, hover for a larger preview, or reveal its file in Finder.
+- **Ready after a restart.** Enable **Open at Login** in Settings. CopyCat uses macOS’s native login-item controls.
+- **Your shortcuts.** Record global hotkeys for opening the library and copying the latest screenshot.
+- **Local by design.** No account, subscription, analytics, or cloud image upload. Your files stay in their original folder.
+- **Feels at home.** Liquid Glass controls on macOS 26, material fallbacks on older Macs, and system light/dark appearance.
+- **Automatic updates.** Check for Updates in Settings, with optional background download and installation. Update archives and feeds are signed.
+- **Native.** Swift, SwiftUI, AppKit, and the Sparkle update framework.
 
-### Requirements
+Made by **World Wide Webb**. Free and open source under the [MIT license](LICENSE).
 
-- **macOS 14 (Sonoma) or newer** — the app sets `LSMinimumSystemVersion` to 14.0.
-- **Xcode Command Line Tools** (ships the Swift 6 toolchain). Install with:
-  ```bash
-  xcode-select --install
-  ```
-  Verify you have Swift 6+:
-  ```bash
-  swift --version   # expect "Apple Swift version 6.x"
-  ```
-- Works on both Apple Silicon and Intel — `swift build` compiles a native
-  binary for whichever Mac you build on.
+## Install
 
-### Steps
+Requires **macOS 14 Sonoma or later**. Release downloads include **Apple Silicon and Intel**.
 
-```bash
-# 1. Get the source
+1. [Download the latest release](https://github.com/0x63616c/copy-cat/releases/latest/download/CopyCat-macOS.zip) and unzip it.
+2. Move **CopyCat.app** into **Applications**, then open it.
+3. Click the cat in your menu bar. Open **Settings → Open at Login** if you want it to start automatically.
+
+**Community build notice:** GitHub builds are ad-hoc signed, not Apple-notarized. If macOS blocks the first launch and you trust the download, use **System Settings → Privacy & Security → Open Anyway**. See [installation and troubleshooting](docs/install.md), including Apple’s instructions and checksum verification.
+
+## Using CopyCat
+
+Use `⇧⌘3` or `⇧⌘4` to capture your screen. If macOS asks for access to your screenshot folder, grant it. CopyCat reads screenshots where macOS saves them; it never moves or deletes the originals.
+
+| Action | How |
+| --- | --- |
+| Copy a recent screenshot | Click its tile in the menu bar library |
+| Preview a screenshot | Hover over its tile |
+| Reveal the original | Right-click a tile → Open in Finder |
+| Open the library | Default: Hyper + X |
+| Copy the latest capture | Default: Hyper + C |
+| Change shortcuts | Settings → Shortcuts |
+| Start automatically | Settings → General → Open at Login |
+| Check for updates | Bottom of Settings → Check for Updates… |
+| Configure automatic updates | Settings → Updates |
+| Find your version or quit | Bottom of Settings |
+
+**Hyper** means `⌃⌥⇧⌘` together. Every preference applies immediately. If macOS needs approval for startup, CopyCat shows an **Open Login Items…** button. Screenshots must be saved to files; CopyCat can help you change a clipboard-only screenshot destination.
+
+## Build from source
+
+Install **Xcode 26.2+** for the native Liquid Glass build (Swift 6+ with an older SDK builds the material fallback), then:
+
+```sh
 git clone https://github.com/0x63616c/copy-cat.git
 cd copy-cat
-
-# 2. (optional) sanity-check the build and tests
-swift build            # debug build
-swift test             # 37 tests across CopyCatCore + CopyCatKit
-
-# 3. Produce the app bundle (release build, menu bar agent, no Dock icon)
-./scripts/bundle.sh    # writes ./CopyCat.app
-
-# 4. Install it
-cp -R CopyCat.app /Applications/
+swift test
+./scripts/bundle.sh
+cp -rf CopyCat.app /Applications/
 open /Applications/CopyCat.app
 ```
 
-`bundle.sh` ad-hoc signs the bundle, so a copy you build on your own Mac opens
-without any Gatekeeper warning. (Ad-hoc signing only works on the machine that
-built it — to hand the `.app` to someone else, notarize it; see
-[Distribute](#distribute-developer-id) below.)
+For development, `./scripts/dev.sh` builds and relaunches the app from this checkout. Add `--release` for an optimized build or `--watch` to rebuild when HEAD changes. Quit your installed copy first to avoid duplicate menu bar icons.
 
-### First run
+## Project map
 
-copy-cat lives in the menu bar (look for the black-cat icon, top-right) — it has
-no Dock icon or window by default. On first launch:
+| Location | Responsibility |
+| --- | --- |
+| `Sources/CopyCatCore` | Settings, screenshot detection rules, layout logic, version |
+| `Sources/CopyCatKit` | macOS services, app coordinator, SwiftUI interface |
+| `Sources/CopyCat` | Executable entry point |
+| `Tests` | Behavior tests and opt-in product screenshot rendering |
+| `site` | Static GitHub Pages website and authentic product images |
+| `scripts` | Build, packaging, website validation, release commands |
 
-1. Click the cat icon to open the popover.
-2. macOS will prompt for access to the folder where your screenshots are saved
-   (the Desktop by default). Grant it so copy-cat can read new screenshots.
-3. Take a screenshot (`⌘⇧4`) — it's copied to your clipboard automatically and
-   appears in the grid.
+Read the [architecture guide](docs/architecture.md), [contributor guide](CONTRIBUTING.md), [release guide](docs/releases.md), and [agent instructions](AGENTS.md).
 
-To launch copy-cat automatically at login, add it under **System Settings →
-General → Login Items**.
+## Releases and contributions
 
-## Build (development)
+A `vX.Y.Z` tag runs tests, builds a universal app, verifies its signature and architectures, and publishes a GitHub release with a ZIP, SHA-256 checksum, and signed Sparkle feed. The version is defined once in `Sources/CopyCatCore/Version.swift`; the bundle is stamped automatically. The website deploys independently when `site/` changes.
 
-```bash
-swift build            # debug build
-swift test             # run the CopyCatCore + CopyCatKit test suites
-./scripts/bundle.sh    # produce CopyCat.app (menu bar agent, no Dock icon)
-open CopyCat.app
-```
+Found a bug or have a small improvement in mind? [Open an issue](https://github.com/0x63616c/copy-cat/issues) or send a pull request. Include your macOS version, CopyCat version, and steps to reproduce. Please remove personal screenshots and paths from reports.
 
-Dev loop — rebuild and relaunch the running menu bar app in one step:
-
-```bash
-./scripts/dev.sh           # debug build -> refresh bundle -> relaunch
-./scripts/dev.sh --release # same, with the release binary
-```
-
-## Distribute (Developer ID)
-
-```bash
-export SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)"
-export NOTARY_PROFILE="copy-cat-notary"
-./scripts/sign-notarize.sh
-```
-
-## How it works
-
-- Watches your screenshot folder with `NSMetadataQuery`, identifying screenshots
-  by the Spotlight `kMDItemIsScreenCapture` flag (filename fallback if indexing
-  is off).
-- On each new screenshot, copies the image to the clipboard (if enabled).
-- Reads — never relocates — screenshots where macOS already saves them.
-- App state lives in `~/Library/Application Support/copy-cat/`.
-
-## Popover
-
-Clicking the black-cat menu bar icon opens a popover: preview on the left,
-square-tile grid of recent screenshots on the right (newest top-left). Click a
-tile to copy it. The cog opens settings (copy-on-screenshot toggle, save
-location, grid size). Recovery states handle "not saving to disk" and "no folder
-access".
-
-## Architecture
-
-- `CopyCatCore` — pure logic, no AppKit, fully unit-tested.
-- `CopyCatKit` — AppKit/SwiftUI coordinator + views (`AppController` is TDD'd via fakes).
-- `CopyCat` — executable shim (`runApp()`).
-
-See `SPEC.md` for the full product spec and
-`docs/superpowers/plans/2026-06-04-copy-cat-menu-bar-app.md` for the build plan.
+Product images capture the actual native views with synthetic browser, dashboard, terminal, notes, and calendar content. The sample landscape was AI-generated; no private screenshots are used. Regenerate them with `COPYCAT_SCREENSHOTS=1 COPYCAT_SCREEN_CAPTURE=1 swift test --filter RenderSnapshots`.

@@ -1,0 +1,22 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: macos-15
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test
+        run: swift test
+      - name: Validate website and scripts
+        run: |
+          python3 scripts/check-site.py
+          for script in scripts/*.sh; do bash -n "$script"; done
+      - name: Verify app bundle
+        run: ./scripts/bundle.sh

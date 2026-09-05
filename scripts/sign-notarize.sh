@@ -20,8 +20,7 @@ ZIP="${ROOT}/CopyCat.zip"
 #     --apple-id you@example.com --team-id TEAMID --password APP_SPECIFIC_PW
 
 echo "==> Codesigning"
-codesign --force --options runtime --timestamp \
-  --sign "$SIGN_IDENTITY" "$APP"
+"$ROOT/scripts/sign.sh"
 
 echo "==> Zipping for notarization"
 rm -f "$ZIP"
@@ -35,4 +34,7 @@ xcrun stapler staple "$APP"
 
 echo "==> Verifying"
 spctl -a -vv -t install "$APP"
-echo "==> Done: signed + notarized ${APP}"
+xcrun stapler validate "$APP"
+rm -f "$ZIP"
+ditto -c -k --keepParent "$APP" "$ZIP"
+echo "==> Done: signed + notarized ${APP} and ${ZIP}"

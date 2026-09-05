@@ -1,0 +1,60 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: macos-15
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate release tag
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          VERSION=$(sed -n 's/.*public static let version = "\([^"]*\)".*/\1/p' Sources/CopyCatCore/Version.swift)
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          [[ "$RELEASE_TAG" == "v$VERSION" ]]
+          git merge-base --is-ancestor HEAD origin/main
+      - run: swift test
+      - name: Build universal app
+        env:
+          UNIVERSAL: '1'
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: ./scripts/bundle.sh
+      - name: Package and verify
+        run: |
+          lipo -verify_arch arm64 x86_64 CopyCat.app/Contents/MacOS/CopyCat
+          codesign --verify --deep --strict CopyCat.app
+      - name: Sign update archive and feed
+        env:
+          UNIVERSAL: '1'
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          : "${SPARKLE_PRIVATE_KEY:?Configure the Sparkle signing secret before releasing}"
+          ./scripts/appcast.sh
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          cat > /tmp/release-notes.md <<'NOTES'
+          ## Install
+          Download **CopyCat-macOS.zip**, unzip it, move CopyCat to Applications, and open it. Requires macOS 14 or later; includes Apple Silicon and Intel.
+
+          **Signing:** This community build is ad-hoc signed, not Apple-notarized. macOS may block the first launch. If you trust this release, follow Apple's Privacy & Security → Open Anyway flow. See the installation guide for details. Do not disable Gatekeeper globally.
+
+          In CopyCat Settings, enable **Open at Login** to keep it ready after restarting. The installed version, build, and Check for Updates action appear at the bottom of Settings. Automatic update settings are under Updates. Update archives and feeds are signed with a dedicated Ed25519 key.
+          NOTES
+          gh release create "$RELEASE_TAG" release-artifacts/CopyCat-macOS.zip release-artifacts/SHA256SUMS.txt release-artifacts/appcast.xml --verify-tag --title "CopyCat ${RELEASE_TAG#v}" --notes-file /tmp/release-notes.md --generate-notes

@@ -9,23 +9,101 @@ import CopyCatCore
 /// Settings: grouped cards, section footers for explanation, SF Symbols on rows.
 struct SettingsView: View {
     @EnvironmentObject var controller: AppController
+    @EnvironmentObject var updates: UpdateManager
+    @ObservedObject var loginItem: LoginItem
 
     var body: some View {
         Form {
+            generalSection
             captureSection
             shortcutsSection
+            updatesSection
             librarySection
             diagnosticsSection
         }
         .formStyle(.grouped)
+        .environment(\.font, .system(size: 13))
         // Drop the grouped form's opaque background so the popover's dark
         // material shows through, matching the grid column beside it. The
         // section "cards" keep their own subtle fills.
         .scrollContentBackground(.hidden)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear { loginItem.refresh() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            loginItem.refresh()
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) { aboutFooter }
     }
 
     // MARK: Sections
+
+    private var updatesSection: some View {
+        Section {
+            Toggle(isOn: Binding(get: { updates.automaticallyChecks }, set: { updates.setAutomaticallyChecks($0) })) {
+                Label("Check for updates automatically", systemImage: "arrow.triangle.2.circlepath")
+            }
+            .toggleStyle(PillToggleStyle())
+            .disabled(!updates.isAvailable)
+            Toggle(isOn: Binding(get: { updates.automaticallyInstalls }, set: { updates.setAutomaticallyInstalls($0) })) {
+                Label("Install updates automatically", systemImage: "arrow.down.circle")
+            }
+            .toggleStyle(PillToggleStyle())
+            .disabled(!updates.isAvailable || !updates.automaticallyChecks)
+            if let error = updates.error {
+                Text(error).font(.callout).foregroundStyle(.red)
+            }
+        } header: {
+            Text("Updates")
+        } footer: {
+            Text("Checks daily. Automatic updates download in the background and install when you quit.")
+        }
+    }
+
+    private var generalSection: some View {
+        Section {
+            Toggle(isOn: Binding(get: { loginItem.isOn }, set: { loginItem.setEnabled($0) })) {
+                Label("Open at Login", systemImage: "power")
+            }
+            .toggleStyle(PillToggleStyle())
+            if loginItem.status == .requiresApproval {
+                Text("Allow CopyCat in Login Items to finish turning this on.")
+                    .font(.callout).foregroundStyle(.secondary)
+                Button("Open Login Items…") { loginItem.openSystemSettings() }
+            }
+            if loginItem.status == .notFound {
+                Text("Move CopyCat to Applications and open it there to enable login startup.")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
+            if let error = loginItem.error {
+                Text(error).font(.callout).foregroundStyle(.red)
+                Button("Open Login Items…") { loginItem.openSystemSettings() }
+            }
+        } header: {
+            Text("General")
+        } footer: {
+            Text("Keep CopyCat ready whenever you log in to your Mac.")
+        }
+    }
+
+    private var aboutFooter: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "cat.fill").font(.title2).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("CopyCat").font(.callout.weight(.semibold))
+                Text("Version \(CopyCatCore.installedVersion)\(CopyCatCore.build.map { " (\($0))" } ?? " · Development")")
+                    .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+                Text("World Wide Webb").font(.caption2).foregroundStyle(.secondary)
+                Button("Check for Updates…") { updates.checkForUpdates() }
+                    .font(.caption).buttonStyle(.link).disabled(!updates.canCheck)
+            }
+            Spacer()
+            Button("Quit") { NSApplication.shared.terminate(nil) }
+                .help("Quit CopyCat").accessibilityLabel("Quit CopyCat")
+        }
+        .padding(14)
+        .modifier(GlassSurface(cornerRadius: 20))
+        .padding(10)
+    }
 
     private var captureSection: some View {
         Section {
@@ -36,7 +114,7 @@ struct SettingsView: View {
         } header: {
             Text("Capture")
         } footer: {
-            Text("When a new screenshot appears, copy it to the clipboard automatically.")
+            Text("New screenshots go straight to your clipboard. The original file stays put.")
         }
     }
 
@@ -53,7 +131,7 @@ struct SettingsView: View {
         } header: {
             Text("Shortcuts")
         } footer: {
-            Text("Global hotkeys that work from any app. Click a shortcut, then press the new keys (must include a modifier). ⎋ cancels.")
+            Text("Click to record a global shortcut. Include ⌘, ⌥, ⌃ or ⇧. Esc cancels. HYPR means all four.")
         }
     }
 
@@ -187,26 +265,25 @@ struct ShortcutRecorderView: View {
 /// control ourselves sidesteps it entirely and animates more smoothly.
 struct PillToggleStyle: ToggleStyle {
     func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: 12) {
-            configuration.label
-            Spacer(minLength: 0)
-            Button {
-                configuration.isOn.toggle()
-            } label: {
+        Button { configuration.isOn.toggle() } label: {
+            HStack(spacing: 12) {
+                configuration.label
+                Spacer(minLength: 0)
                 ZStack {
-                    Capsule()
-                        .fill(configuration.isOn ? Color.accentColor : Color.primary.opacity(0.22))
-                    Circle()
-                        .fill(.white)
+                    Capsule().fill(configuration.isOn ? Color.accentColor : Color.primary.opacity(0.22))
+                    Circle().fill(.white)
                         .frame(width: 18, height: 18)
                         .shadow(color: .black.opacity(0.25), radius: 1, y: 0.5)
                         .offset(x: configuration.isOn ? 8 : -8)
                 }
                 .frame(width: 38, height: 22)
                 .animation(.spring(response: 0.28, dampingFraction: 0.72), value: configuration.isOn)
+                .accessibilityHidden(true)
             }
-            .buttonStyle(.plain)
-            .accessibilityAddTraits(configuration.isOn ? [.isButton, .isSelected] : .isButton)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .accessibilityValue(configuration.isOn ? "On" : "Off")
+        .accessibilityAddTraits(configuration.isOn ? [.isSelected] : [])
     }
 }

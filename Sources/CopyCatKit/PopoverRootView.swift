@@ -4,6 +4,12 @@ import CopyCatCore
 
 struct PopoverRootView: View {
     @EnvironmentObject var controller: AppController
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @StateObject private var loginItem: LoginItem
+
+    init(loginItem: LoginItem = LoginItem()) {
+        _loginItem = StateObject(wrappedValue: loginItem)
+    }
 
     var body: some View {
         HStack(spacing: 0) {
@@ -22,7 +28,7 @@ struct PopoverRootView: View {
         // The popover appearance (set on NSPopover) owns the dark material now,
         // so arrow and body match. No content-level overlay (which caused the
         // seam against the arrow).
-        .animation(.smooth(duration: 0.5), value: controller.showingSettings)
+        .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: controller.showingSettings)
         // Clear the floating preview if the cursor leaves the popover entirely.
         .onHover { inside in if !inside { controller.setHoveredPreview(nil) } }
     }
@@ -53,7 +59,7 @@ struct PopoverRootView: View {
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 2)
-                    .background(Color.primary.opacity(0.08), in: Capsule())
+                    .background(.quaternary, in: Capsule())
                     .contentTransition(.numericText())
             }
             Spacer()
@@ -82,10 +88,11 @@ struct PopoverRootView: View {
                 .imageScale(.medium)
                 .foregroundStyle(.secondary)
                 .padding(9)
-                .background(Color.primary.opacity(0.08), in: Circle())
+                .modifier(GlassSurface(cornerRadius: 24, interactive: true))
         }
         .buttonStyle(.plain)
         .help(help)
+        .accessibilityLabel(help)
     }
 
     /// Right side: the settings pane that slides in, with its own close button.
@@ -96,7 +103,7 @@ struct PopoverRootView: View {
                 Spacer()
                 circleButton("xmark", help: "Close settings") { controller.closeSettings() }
             }
-            SettingsView()
+            SettingsView(loginItem: loginItem)
         }
         .frame(maxHeight: .infinity, alignment: .top)
     }

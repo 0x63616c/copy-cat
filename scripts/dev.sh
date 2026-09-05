@@ -46,16 +46,6 @@ for arg in "$@"; do
 done
 
 build_and_relaunch() {
-  echo "==> Building ${CONFIG}"
-  swift build -c "$CONFIG" --package-path "$ROOT"
-  local BIN
-  BIN="$(swift build -c "$CONFIG" --package-path "$ROOT" --show-bin-path)/${EXE_NAME}"
-
-  echo "==> Refreshing ${APP}"
-  mkdir -p "${APP}/Contents/MacOS" "${APP}/Contents/Resources"
-  cp "$BIN" "$EXE_PATH"
-  cp "${ROOT}/Resources/Info.plist.template" "${APP}/Contents/Info.plist"
-
   # Kill only the instance launched from this exact bundle path.
   local PID
   PID="$(pgrep -f "^${EXE_PATH}$" || true)"
@@ -68,6 +58,8 @@ build_and_relaunch() {
       sleep 0.2
     done
   fi
+
+  CONFIG="$CONFIG" "$ROOT/scripts/bundle.sh"
 
   echo "==> Relaunching"
   open "$APP"

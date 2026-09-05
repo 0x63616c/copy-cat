@@ -22,7 +22,7 @@ enum PopoverMetrics {
     /// so the popover is symmetric and the grouped form isn't cramped.
     static let settingsPaneWidth: CGFloat = 4 * tile + 5 * gap
     /// Minimum popover height while the settings pane is open, so the form fits.
-    static let settingsMinHeight: CGFloat = 470
+    static let settingsMinHeight: CGFloat = 600
 
     /// Width/height the popover should adopt for the current grid + state. When
     /// `settings` is true the right-hand settings pane is added beside the grid.

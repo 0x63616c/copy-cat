@@ -11,3 +11,6 @@ DerivedData/
 *.db
 .beads-credential-key
 .beads/proxieddb/
+
+# Generated release archives and signed update feed
+release-artifacts/
