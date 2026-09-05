@@ -21,5 +21,7 @@ cp -f "$ROOT/Resources/AppIcon.icns" "$ROOT/Resources/menubar-cat.pdf" "$APP/Con
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CopyCatBuildNumber $BUILD_NUMBER" "$APP/Contents/Info.plist"
 ditto "$ROOT/.build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework" "$APP/Contents/Frameworks/Sparkle.framework"
+cp -f "$ROOT/LICENSE" "$APP/Contents/Resources/LICENSE.txt"
+cp -f "$ROOT/.build/artifacts/sparkle/Sparkle/LICENSE" "$APP/Contents/Resources/Sparkle-LICENSE.txt"
 "$ROOT/scripts/sign.sh"
 echo "Built CopyCat $VERSION ($BUILD_NUMBER): $APP"

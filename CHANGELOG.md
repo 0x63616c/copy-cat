@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2 — 2026-09-05
+
+- Include CopyCat and Sparkle license notices inside the distributed app bundle.
+
 ## 0.2.1 — 2026-09-05
 
 - Correct the universal-architecture verification command in release CI.

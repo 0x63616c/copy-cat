@@ -20,7 +20,7 @@
 - **Automatic updates.** Check for Updates in Settings, with optional background download and installation. Update archives and feeds are signed.
 - **Native.** Swift, SwiftUI, AppKit, and the Sparkle update framework.
 
-Made by **World Wide Webb**. Free and open source under the [MIT license](LICENSE).
+Made by **World Wide Webb**. Free and open source under the [MIT license](LICENSE). Updates use [Sparkle](https://sparkle-project.org/); its license and bundled component notices are included in the app’s Resources folder.
 
 ## Install
 
