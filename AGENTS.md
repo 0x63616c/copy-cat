@@ -133,6 +133,12 @@ Use Swift 6+. Normal tests must not mutate real login items, preferences, clipbo
 
 ## Release and handoff
 
+## Commits and automated releases
+
+Use Conventional Commits for every non-merge commit: `feat:` for a user-visible feature, `fix:` or `perf:` for a user-visible correction, and `docs:`, `test:`, `ci:`, `build:`, `chore:`, `refactor:`, or `style:` when no product release is needed. Add `!` or a `BREAKING CHANGE:` footer only for an intentional major release.
+
+CI enforces this policy. Run `./scripts/install-git-hooks.sh` once for the same local feedback; it installs only a `commit-msg` hook beside active Beads hooks. A release also requires a change under `Sources/`, `Resources/`, or `Package.swift`, so documentation, website, and CI-only changes do not publish an app update. The release workflow automatically bumps `Version.swift`, updates `CHANGELOG.md`, tags, signs, notarizes, and publishes qualifying changes merged to `main`; do not manually bump the version, edit an Unreleased entry, or run `scripts/release.sh` for ordinary releases.
+
 Follow the conservative Beads profile unless the user explicitly authorizes commit/push/release. When authorized, validate the exact changes, get an independent agent review if requested, commit only the intended files, push, and verify CI and release/Pages outcomes. Do not treat a local build as a successful deployment.
 
 Release with `scripts/release.sh X.Y.Z` after updating the version/changelog and pushing main. Do not move published tags. Releases from 0.3.1 must pass Developer ID signing, Apple notarization, stapling, and Gatekeeper verification before Sparkle signing and publication. Never silently downgrade signing. Never upload signing credentials to source control. See `docs/releases.md`.

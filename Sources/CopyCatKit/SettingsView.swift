@@ -11,6 +11,7 @@ struct SettingsView: View {
     @EnvironmentObject var controller: AppController
     @EnvironmentObject var updates: UpdateManager
     @ObservedObject var loginItem: LoginItem
+    @State private var hidesFloatingThumbnail = false
 
     var body: some View {
         ScrollView {
@@ -29,7 +30,10 @@ struct SettingsView: View {
         // section "cards" keep their own subtle fills.
         .scrollContentBackground(.hidden)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear { loginItem.refresh() }
+        .onAppear {
+            loginItem.refresh()
+            hidesFloatingThumbnail = controller.hidesFloatingThumbnail
+        }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             loginItem.refresh()
         }
@@ -85,6 +89,16 @@ struct SettingsView: View {
                 Label("Copy on screenshot", systemImage: "camera.viewfinder")
             }
             .toggleStyle(PillToggleStyle())
+            Toggle(isOn: Binding(
+                get: { hidesFloatingThumbnail },
+                set: { hide in
+                    controller.setHidesFloatingThumbnail(hide)
+                    hidesFloatingThumbnail = controller.hidesFloatingThumbnail
+                })) {
+                Label("Hide floating screenshot thumbnail", systemImage: "rectangle.bottomthird.inset.filled")
+            }
+            .toggleStyle(PillToggleStyle())
+            .help("Changes macOS’s screenshot thumbnail setting")
             if loginItem.status == .requiresApproval {
                 Text("Allow CopyCat in Login Items to finish turning this on.")
                     .font(.callout).foregroundStyle(.secondary)

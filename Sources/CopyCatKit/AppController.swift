@@ -80,6 +80,12 @@ public final class AppController: ObservableObject {
         settings.saveLocationPath ?? prefs.resolvedLocation(home: home)
     }
 
+    public var hidesFloatingThumbnail: Bool { prefs.hidesFloatingThumbnail }
+
+    public func setHidesFloatingThumbnail(_ hide: Bool) {
+        prefs.setHidesFloatingThumbnail(hide)
+    }
+
     /// Starts the live detector. Called by the app shell, never by tests.
     public func start() {
         log.info("app starting (v\(CopyCatCore.version)); watchFolder=\(watchFolder)")

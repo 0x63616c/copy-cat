@@ -4,7 +4,7 @@
   <p><strong>Your screenshots. Already copied.</strong></p>
   <p>A native Mac utility that copies new screenshots to your clipboard<br>and keeps recent captures one click away.</p>
   <p><a href="https://0x63616c.github.io/copy-cat/">Website</a> · <a href="https://github.com/0x63616c/copy-cat/releases/latest">Download</a> · <a href="docs/install.md">Installation</a> · <a href="CONTRIBUTING.md">Contribute</a></p>
-  <p><a href="https://github.com/0x63616c/copy-cat/actions/workflows/ci.yml"><img src="https://github.com/0x63616c/copy-cat/actions/workflows/ci.yml/badge.svg" alt="CI status"></a> <a href="https://github.com/0x63616c/copy-cat/releases"><img src="https://img.shields.io/github/v/release/0x63616c/copy-cat" alt="Latest release"></a> <img src="https://img.shields.io/badge/macOS-14%2B-232721" alt="macOS 14 or later"> <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-305642" alt="MIT license"></a></p>
+  <p><a href="https://github.com/0x63616c/copy-cat/actions/workflows/ci.yml"><img src="https://github.com/0x63616c/copy-cat/actions/workflows/ci.yml/badge.svg" alt="CI status"></a> <a href="https://github.com/0x63616c/copy-cat/actions/workflows/release.yml"><img src="https://github.com/0x63616c/copy-cat/actions/workflows/release.yml/badge.svg" alt="Release status"></a> <a href="https://github.com/0x63616c/copy-cat/actions/workflows/pages.yml"><img src="https://github.com/0x63616c/copy-cat/actions/workflows/pages.yml/badge.svg" alt="Website status"></a> <a href="https://github.com/0x63616c/copy-cat/releases"><img src="https://img.shields.io/github/v/release/0x63616c/copy-cat" alt="Latest release"></a> <img src="https://img.shields.io/badge/macOS-14%2B-232721" alt="macOS 14 or later"> <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-305642" alt="MIT license"></a></p>
 </div>
 
 <p align="center"><picture>
@@ -84,7 +84,7 @@ Read the [architecture guide](docs/architecture.md), [contributor guide](CONTRIB
 
 ## Releases and contributions
 
-A `vX.Y.Z` tag runs tests, builds a universal app, verifies its signature and architectures, and publishes a GitHub release with a ZIP, SHA-256 checksum, and signed Sparkle feed. The version is defined once in `Sources/CopyCatCore/Version.swift`; the bundle is stamped automatically. The website deploys independently when `site/` changes.
+Qualifying Conventional Commits that change the shipped app (`Sources/`, `Resources/`, or `Package.swift`) release automatically: `feat:` produces a minor version; `fix:`, `perf:`, and `revert:` produce a patch; `!` and `BREAKING CHANGE:` produce a major. The workflow updates the source version and changelog, then builds, signs, notarizes, verifies, and publishes a GitHub release with a ZIP, SHA-256 checksum, and signed Sparkle feed. Documentation, website, and CI-only commits do not release. The website deploys independently when `site/` changes.
 
 Found a bug or have a small improvement in mind? [Open an issue](https://github.com/0x63616c/copy-cat/issues) or send a pull request. Include your macOS version, CopyCat version, and steps to reproduce. Please remove personal screenshots and paths from reports.
 

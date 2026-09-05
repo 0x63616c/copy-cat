@@ -1,16 +1,17 @@
 # Releasing CopyCat
 
-## Cut a release
+## Automatic releases
 
-1. Update `CopyCatCore.version` in `Sources/CopyCatCore/Version.swift` using semantic versioning.
-2. Update `CHANGELOG.md`, run `swift test` and `./scripts/bundle.sh`, and review the change.
-3. Commit and push `main`.
-4. Run `./scripts/release.sh 0.2.0` (substitute the new version).
-5. Watch the **Release** workflow in GitHub Actions. Verify the downloaded ZIP’s checksum, app version, architectures, and launch behavior.
+1. Write a Conventional Commit and merge it to `main`.
+2. When the commit changes `Sources/`, `Resources/`, or `Package.swift`, `feat:` creates a minor release; `fix:`, `perf:`, and `revert:` create a patch release; `!` or a `BREAKING CHANGE:` footer creates a major release.
+3. `docs:`, `test:`, `ci:`, `build:`, `chore:`, `refactor:`, and `style:` do not release.
+4. Watch the **Release** workflow in GitHub Actions. Verify the downloaded ZIP’s checksum, app version, architectures, launch behavior, and Sparkle update feed.
 
-The helper requires a clean checkout on `main`, matching `origin/main`, and a version matching the source. It creates and pushes an annotated `vX.Y.Z` tag. CI validates the tag and main ancestry, runs the tests, builds both `arm64` and `x86_64`, verifies the app signature, and publishes `CopyCat-macOS.zip`, `SHA256SUMS.txt`, and signed `appcast.xml`. The stable latest-download URL always resolves to the newest GitHub release asset.
+Run `./scripts/install-git-hooks.sh` once after cloning for immediate local Conventional Commit feedback. CI remains the authoritative enforcement.
 
-`CFBundleVersion` is the semantic source version, used for update comparison. `CopyCatBuildNumber` is stamped from `BUILD_NUMBER`: the workflow run number in CI, or the commit count locally. This avoids a local commit count blocking a newer CI release with a smaller run number. Do not manually change the template version; it is overwritten by the bundler. A bare debug executable shows the source version with “Development”.
+CI validates commit syntax, determines the next version from commits since the last tag, updates `Version.swift` and `CHANGELOG.md`, and commits and pushes an annotated `vX.Y.Z` tag. It then runs the tests, builds both `arm64` and `x86_64`, verifies the app signature, and publishes `CopyCat-macOS.zip`, `SHA256SUMS.txt`, and signed `appcast.xml`. The stable latest-download URL always resolves to the newest GitHub release asset. The workflow re-downloads and re-verifies the published assets before succeeding.
+
+`CFBundleVersion` is the semantic source version, used for update comparison. `CopyCatBuildNumber` is stamped from `BUILD_NUMBER`: the workflow run number in CI, or the commit count locally. This avoids a local commit count blocking a newer CI release with a smaller run number. Do not manually change the source or template versions; the release workflow and bundler own them. A bare debug executable shows the source version with “Development”.
 
 ## Signing status
 

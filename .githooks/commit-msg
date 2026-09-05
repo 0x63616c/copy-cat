@@ -1,0 +1,4 @@
+#!/bin/bash
+set -euo pipefail
+root="$(git rev-parse --show-toplevel)"
+python3 "$root/scripts/release_metadata.py" check-message "$1"

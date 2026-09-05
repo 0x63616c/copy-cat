@@ -12,8 +12,10 @@ final class FakePrefs: ScreencapturePreferences, @unchecked Sendable {
     var target: String? = "file"
     private(set) var fileTargetEnabled = false
     private(set) var thumbnailDisabled = false
+    var hidesFloatingThumbnail = false
     func enableFileTarget() { fileTargetEnabled = true; target = "file" }
-    func disableThumbnail() { thumbnailDisabled = true }
+    func disableThumbnail() { thumbnailDisabled = true; hidesFloatingThumbnail = true }
+    func setHidesFloatingThumbnail(_ hide: Bool) { hidesFloatingThumbnail = hide }
 }
 
 final class FakeAccess: FolderAccessing, @unchecked Sendable {

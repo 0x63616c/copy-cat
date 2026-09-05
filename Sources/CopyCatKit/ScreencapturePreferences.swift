@@ -5,8 +5,10 @@ import CopyCatCore
 public protocol ScreencapturePreferences: Sendable {
     var locationPath: String? { get }
     var target: String? { get }
+    var hidesFloatingThumbnail: Bool { get }
     func enableFileTarget()
     func disableThumbnail()
+    func setHidesFloatingThumbnail(_ hide: Bool)
 }
 
 public extension ScreencapturePreferences {
@@ -35,13 +37,26 @@ public struct SystemScreencapturePreferences: ScreencapturePreferences {
         return (raw?.isEmpty ?? true) ? nil : raw
     }
 
+    public var hidesFloatingThumbnail: Bool {
+        Self.hidesFloatingThumbnail(showThumbnail: defaults?.object(forKey: "show-thumbnail") as? Bool)
+    }
+
+    static func hidesFloatingThumbnail(showThumbnail: Bool?) -> Bool {
+        // macOS shows the thumbnail unless the preference explicitly disables it.
+        showThumbnail.map { !$0 } ?? false
+    }
+
     public func enableFileTarget() {
         defaults?.set("file", forKey: "target")
         defaults?.synchronize()
     }
 
     public func disableThumbnail() {
-        defaults?.set(false, forKey: "show-thumbnail")
+        setHidesFloatingThumbnail(true)
+    }
+
+    public func setHidesFloatingThumbnail(_ hide: Bool) {
+        defaults?.set(!hide, forKey: "show-thumbnail")
         defaults?.synchronize()
     }
 }
