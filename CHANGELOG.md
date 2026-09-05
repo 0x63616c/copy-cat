@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.4.0 — 2026-09-05
+
+- add screenshot thumbnail setting
+
 ## 0.3.2 — 2026-09-05
 
 - Tighten the Settings control layout, align Logs with other row actions, and remove redundant helper copy.
