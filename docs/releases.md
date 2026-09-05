@@ -14,9 +14,23 @@ The helper requires a clean checkout on `main`, matching `origin/main`, and a ve
 
 ## Signing status
 
-The default CI pipeline creates an **ad-hoc-signed community build**. It does not claim Developer ID signing or notarization. Download, README, website, and release notes explain the first-launch requirement. The dedicated `SPARKLE_PRIVATE_KEY` GitHub Actions secret signs update archives and appcast metadata. That Ed25519 signature authenticates automatic updates; it is separate from Apple Developer ID signing/notarization. The release fails if this secret is missing.
+Release CI requires Developer ID signing and Apple notarization. It fails if a credential is missing or signing, notarization, stapling, or Gatekeeper verification fails. Older releases through 0.3.0 were ad-hoc-signed community builds; their installation warnings still apply.
 
-For an Apple-notarized distribution, use an authorized Developer ID identity and stored notarytool profile on the signing Mac:
+Configure these repository secrets and variables once:
+
+| Setting | GitHub type | Purpose |
+| --- | --- | --- |
+| `APPLE_CERTIFICATE_P12` | Secret | Base64-encoded encrypted Developer ID certificate and private key |
+| `APPLE_CERTIFICATE_PASSWORD` | Secret | Passphrase for that P12 |
+| `APPLE_NOTARY_KEY` | Secret | Dedicated App Store Connect team API private key contents |
+| `APPLE_NOTARY_KEY_ID` | Variable | That API key’s ID |
+| `APPLE_NOTARY_ISSUER_ID` | Variable | Apple team API issuer UUID |
+| `APPLE_SIGN_IDENTITY` | Variable | Exact Developer ID Application identity name |
+| `SPARKLE_PRIVATE_KEY` | Secret | Dedicated Ed25519 key for update archives and feeds |
+
+Keep encrypted credential backups in 1Password. Never commit them. CI imports the identity and notarization credentials into a temporary keychain, restricts file permissions, removes temporary files, and deletes the keychain even on failure. The release test job and pull-request CI do not receive these credentials. Sparkle’s signatures authenticate updates separately from Apple signing/notarization.
+
+To sign and notarize locally, use an authorized Developer ID identity and stored notarytool profile on the signing Mac:
 
 ```sh
 UNIVERSAL=1 ./scripts/bundle.sh

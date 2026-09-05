@@ -101,7 +101,7 @@ private struct GridTile: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var hovering = false
     private var highlighted: Bool { hovering || focused }
-    private let radius: CGFloat = 10
+    private let radius: CGFloat = 8
 
     var body: some View {
         Button { onClick(shot) } label: {
@@ -127,7 +127,7 @@ private struct GridTile: View {
                     Spacer()
                     Image(systemName: "doc.on.doc").opacity(highlighted ? 1 : 0)
                 }
-                .font(.system(size: 11))
+                .font(.system(size: 10))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 2)
                 .frame(height: PopoverMetrics.cardHeight - PopoverMetrics.thumbnailHeight)

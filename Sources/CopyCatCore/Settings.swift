@@ -45,10 +45,10 @@ public struct AppSettings: Codable, Equatable, Sendable {
         saveLocationPath: nil
     )
 
-    /// The screenshot grid is a fixed 3×3: three columns, three visible rows
+    /// The screenshot grid is a fixed 4×4: four columns, four visible rows
     /// before it scrolls. Not user-configurable.
-    public static let gridColumns = 3
-    public static let gridRows = 3
+    public static let gridColumns = 4
+    public static let gridRows = 4
 
     /// `~/Library/Application Support/copy-cat/config.json`
     public static func configURL() -> URL {

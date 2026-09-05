@@ -9,8 +9,8 @@ import Testing
 }
 
 @Test func gridIsFixedFourByFour() {
-    #expect(AppSettings.gridColumns == 3)
-    #expect(AppSettings.gridRows == 3)
+    #expect(AppSettings.gridColumns == 4)
+    #expect(AppSettings.gridRows == 4)
 }
 
 @Test func settingsRoundTripThroughJSON() throws {

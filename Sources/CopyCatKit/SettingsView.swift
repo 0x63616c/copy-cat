@@ -13,14 +13,16 @@ struct SettingsView: View {
     @ObservedObject var loginItem: LoginItem
 
     var body: some View {
-        Form {
-            generalSection
-            updatesSection
-            shortcutsSection
-            librarySection
-            diagnosticsSection
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                generalSection
+                updatesSection
+                shortcutsSection
+                librarySection
+                diagnosticsSection
+            }
+            .padding(14)
         }
-        .formStyle(.grouped)
         .environment(\.font, .system(size: 13))
         // Drop the grouped form's opaque background so the popover's
         // material shows through, matching the grid column beside it. The
@@ -34,10 +36,23 @@ struct SettingsView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) { aboutFooter }
     }
 
+    private func section<Content: View>(_ title: String, footer: String? = nil, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title).font(.system(size: 11, weight: .medium)).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 10, content: content)
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(nsColor: .controlBackgroundColor).opacity(0.55), in: RoundedRectangle(cornerRadius: 9))
+                .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(.separator, lineWidth: 0.5))
+            if let footer { Text(footer).font(.system(size: 10)).foregroundStyle(.secondary) }
+        }
+        .controlSize(.small)
+    }
+
     // MARK: Sections
 
     private var updatesSection: some View {
-        Section {
+        section("Updates", footer: "Checks daily. Downloads install when you quit.") {
             HStack {
                 Label("Software Update", systemImage: "arrow.down.circle")
                 Spacer()
@@ -57,15 +72,11 @@ struct SettingsView: View {
             if let error = updates.error {
                 Text(error).font(.callout).foregroundStyle(.red)
             }
-        } header: {
-            Text("Updates")
-        } footer: {
-            Text("Checks daily. Downloads install when you quit.")
         }
     }
 
     private var generalSection: some View {
-        Section {
+        section("General") {
             Toggle(isOn: Binding(get: { loginItem.isOn }, set: { loginItem.setEnabled($0) })) {
                 Label("Open at Login", systemImage: "power")
             }
@@ -87,32 +98,27 @@ struct SettingsView: View {
                 Text(error).font(.callout).foregroundStyle(.red)
                 Button("Open Login Items…") { loginItem.openSystemSettings() }
             }
-        } header: {
-            Text("General")
         }
     }
 
     private var aboutFooter: some View {
         HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("CopyCat \(CopyCatCore.installedVersion)\(CopyCatCore.build.map { " (\($0))" } ?? " · Development")")
-                    .font(.caption).textSelection(.enabled)
-                Text("World Wide Webb").font(.caption2)
-            }
-            .foregroundStyle(.secondary)
+            Text("CopyCat \(CopyCatCore.installedVersion)\(CopyCatCore.build.map { " (\($0))" } ?? " · Development")")
+                .font(.caption).textSelection(.enabled)
+                .foregroundStyle(.secondary)
             Spacer()
             Button("Quit CopyCat") { NSApplication.shared.terminate(nil) }
                 .controlSize(.small)
         }
         .padding(.horizontal, 18)
-        .padding(.vertical, 12)
+        .frame(height: PopoverMetrics.footerHeight)
         .frame(maxWidth: .infinity)
         .background(.bar)
         .overlay(alignment: .top) { Divider() }
     }
 
     private var shortcutsSection: some View {
-        Section {
+        section("Shortcuts", footer: "Click a shortcut to change it. HYPR is ⌃⌥⇧⌘. Esc cancels.") {
             ShortcutRecorderView(
                 title: "Open CopyCat",
                 systemImage: "menubar.arrow.up.rectangle",
@@ -121,15 +127,11 @@ struct SettingsView: View {
                 title: "Copy last screenshot",
                 systemImage: "doc.on.clipboard",
                 shortcut: setting(\.copyLastShortcut))
-        } header: {
-            Text("Shortcuts")
-        } footer: {
-            Text("Click a shortcut to change it. HYPR is ⌃⌥⇧⌘. Esc cancels.")
         }
     }
 
     private var librarySection: some View {
-        Section {
+        section("Library") {
             // Button rides the label row (always has room); the path gets its
             // own full-width line below, middle-truncated so a long path never
             // wraps and breaks the row.
@@ -146,31 +148,19 @@ struct SettingsView: View {
                     .truncationMode(.middle)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-        } header: {
-            Text("Library")
-        } footer: {
-            Text("The folder CopyCat watches for new screenshots.")
         }
     }
 
     private var diagnosticsSection: some View {
-        Section {
+        section("Diagnostics") {
             LabeledContent {
                 Button("Open Logs") { controller.openLogs() }
             } label: {
                 Label("Activity log", systemImage: "doc.text.magnifyingglass")
             }
-        } header: {
-            Text("Diagnostics")
-        } footer: {
-            Text("CopyCat records what it does to a log file. Open it to see recent activity.")
         }
     }
 
-    // MARK: Live binding
-
-    /// A binding into `AppController.settings` that persists and applies the
-    /// change immediately (no Save button), so the popover resizes live.
     private func setting<T: Equatable>(_ keyPath: WritableKeyPath<AppSettings, T>) -> Binding<T> {
         Binding(
             get: { controller.settings[keyPath: keyPath] },

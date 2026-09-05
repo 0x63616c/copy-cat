@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1 — 2026-09-05
+
+- Restore the dense 4×4 library and reduce toolbar/card spacing.
+- Compact Settings so more controls are visible without scrolling.
+
 ## 0.3.0 — 2026-09-05
 
 - Redesign the library with larger landscape thumbnails, visible capture ages, keyboard preview, and Copy Latest.

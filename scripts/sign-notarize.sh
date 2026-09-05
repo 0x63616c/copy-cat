@@ -27,13 +27,15 @@ rm -f "$ZIP"
 ditto -c -k --keepParent "$APP" "$ZIP"
 
 echo "==> Submitting to notary service"
-xcrun notarytool submit "$ZIP" --keychain-profile "$NOTARY_PROFILE" --wait
+NOTARY_ARGS=(--keychain-profile "$NOTARY_PROFILE")
+if [[ -n "${NOTARY_KEYCHAIN:-}" ]]; then NOTARY_ARGS+=(--keychain "$NOTARY_KEYCHAIN"); fi
+xcrun notarytool submit "$ZIP" "${NOTARY_ARGS[@]}" --wait --timeout 30m
 
 echo "==> Stapling"
 xcrun stapler staple "$APP"
 
 echo "==> Verifying"
-spctl -a -vv -t install "$APP"
+spctl -a -vv -t execute "$APP"
 xcrun stapler validate "$APP"
 rm -f "$ZIP"
 ditto -c -k --keepParent "$APP" "$ZIP"

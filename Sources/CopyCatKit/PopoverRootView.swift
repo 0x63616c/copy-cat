@@ -95,8 +95,8 @@ struct PopoverRootView: View {
         HStack(spacing: 8) { content() }
             .frame(height: PopoverMetrics.headerRow)
             .padding(.horizontal, 16)
-            .padding(.top, 11)
-            .padding(.bottom, 9)
+            .padding(.top, 7)
+            .padding(.bottom, 7)
     }
 
     /// A circular, secondary-tinted icon button used in both header bars.

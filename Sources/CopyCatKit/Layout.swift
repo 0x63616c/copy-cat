@@ -4,16 +4,16 @@ import CopyCatCore
 /// Shared layout constants for the popover, so the SwiftUI grid and the AppKit
 /// popover sizing agree (no magic numbers split across files).
 enum PopoverMetrics {
-    static let tile: CGFloat = 124
-    static let thumbnailHeight: CGFloat = 88
-    static let cardHeight: CGFloat = 114
-    static let footerHeight: CGFloat = 44
-    static let gap: CGFloat = 12
+    static let tile: CGFloat = 88
+    static let thumbnailHeight: CGFloat = 68
+    static let cardHeight: CGFloat = 86
+    static let footerHeight: CGFloat = 36
+    static let gap: CGFloat = 8
     /// Fixed height of the title-row content in each header bar (grid + settings),
     /// so the two titles line up regardless of which trailing control is present.
-    static let headerRow: CGFloat = 34
-    /// Full header height = headerRow + the bar's top/bottom padding (11 + 9).
-    static let headerHeight: CGFloat = headerRow + 11 + 9
+    static let headerRow: CGFloat = 30
+    /// Full header height = headerRow + the bar's top/bottom padding (7 + 7).
+    static let headerHeight: CGFloat = headerRow + 7 + 7
     static let bannerHeight: CGFloat = 94
     // Hug the fixed column count and outer gutters so there is no
     // dead space between the last image and the scrollbar. The grid column is

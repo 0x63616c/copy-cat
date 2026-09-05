@@ -12,6 +12,7 @@ jobs:
     runs-on: macos-15
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
+      SIGN_IDENTITY: ${{ vars.APPLE_SIGN_IDENTITY }}
     permissions:
       contents: write
     steps:
@@ -27,6 +28,14 @@ jobs:
           [[ "$RELEASE_TAG" == "v$VERSION" ]]
           git merge-base --is-ancestor HEAD origin/main
       - run: swift test
+      - name: Configure release signing
+        env:
+          APPLE_CERTIFICATE_P12: ${{ secrets.APPLE_CERTIFICATE_P12 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_NOTARY_KEY: ${{ secrets.APPLE_NOTARY_KEY }}
+          APPLE_NOTARY_KEY_ID: ${{ vars.APPLE_NOTARY_KEY_ID }}
+          APPLE_NOTARY_ISSUER_ID: ${{ vars.APPLE_NOTARY_ISSUER_ID }}
+        run: ./scripts/setup-ci-signing.sh
       - name: Build universal app
         env:
           UNIVERSAL: '1'
@@ -36,6 +45,8 @@ jobs:
         run: |
           lipo CopyCat.app/Contents/MacOS/CopyCat -verify_arch arm64 x86_64
           codesign --verify --deep --strict CopyCat.app
+      - name: Notarize and staple
+        run: ./scripts/sign-notarize.sh
       - name: Sign update archive and feed
         env:
           UNIVERSAL: '1'
@@ -53,8 +64,13 @@ jobs:
           ## Install
           Download **CopyCat-macOS.zip**, unzip it, move CopyCat to Applications, and open it. Requires macOS 14 or later; includes Apple Silicon and Intel.
 
-          **Signing:** This community build is ad-hoc signed, not Apple-notarized. macOS may block the first launch. If you trust this release, follow Apple's Privacy & Security → Open Anyway flow. See the installation guide for details. Do not disable Gatekeeper globally.
+          **Signing:** This build is signed with Developer ID, notarized by Apple, and includes a stapled notarization ticket. The release pipeline verifies Gatekeeper acceptance before publishing.
 
           In CopyCat Settings, enable **Open at Login** to keep it ready after restarting. The installed version and build appear at the bottom of Settings. Check for Updates and automatic update settings are under Updates. Update archives and feeds are signed with a dedicated Ed25519 key.
           NOTES
           gh release create "$RELEASE_TAG" release-artifacts/CopyCat-macOS.zip release-artifacts/SHA256SUMS.txt release-artifacts/appcast.xml --verify-tag --title "CopyCat ${RELEASE_TAG#v}" --notes-file /tmp/release-notes.md --generate-notes
+      - name: Remove temporary signing credentials
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/copy-cat-signing.keychain-db" || true
+          rm -f "$RUNNER_TEMP/copy-cat-developer-id.p12" "$RUNNER_TEMP/copy-cat-notary.p8"
