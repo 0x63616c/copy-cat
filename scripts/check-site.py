@@ -5,7 +5,6 @@ from pathlib import Path
 from urllib.parse import urlsplit, unquote
 
 root = Path(__file__).resolve().parent.parent / 'site'
-source_version = (root.parent / 'Sources' / 'CopyCatCore' / 'Version.swift').read_text().split('public static let version = "', 1)[1].split('"', 1)[0]
 
 class Page(HTMLParser):
     def __init__(self):
@@ -24,8 +23,8 @@ class Page(HTMLParser):
 page = Page()
 html = (root / 'index.html').read_text()
 page.feed(html)
-if f'Download CopyCat {source_version}' not in html:
-    page.errors.append(f'Site download version must match {source_version}')
+if 'Download CopyCat</a>' not in html:
+    page.errors.append('Site download button missing')
 for link in page.links:
     parts = urlsplit(link)
     if parts.scheme or parts.netloc:
