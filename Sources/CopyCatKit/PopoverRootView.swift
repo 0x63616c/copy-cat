@@ -105,8 +105,8 @@ struct PopoverRootView: View {
             Image(systemName: symbol)
                 .imageScale(.medium)
                 .foregroundStyle(.secondary)
-                .frame(width: 36, height: 36)
-                .modifier(GlassSurface(cornerRadius: 18, interactive: true))
+                .frame(width: PopoverMetrics.headerRow, height: PopoverMetrics.headerRow)
+                .modifier(GlassSurface(cornerRadius: PopoverMetrics.headerRow / 2, interactive: true))
         }
         .buttonStyle(.plain)
         .help(help)
