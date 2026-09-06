@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.4.1 — 2026-09-06
+
+- center popover header controls
+
 ## 0.4.0 — 2026-09-05
 
 - add screenshot thumbnail setting
