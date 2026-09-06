@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.4.2 — 2026-09-06
+
+- align popover header controls
+
 ## 0.4.1 — 2026-09-06
 
 - center popover header controls
