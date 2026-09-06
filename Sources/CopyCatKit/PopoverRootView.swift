@@ -94,7 +94,8 @@ struct PopoverRootView: View {
     private func headerBar<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         HStack(spacing: 8) { content() }
             .frame(height: PopoverMetrics.headerRow)
-            .padding(.horizontal, 16)
+            .padding(.leading, 16)
+            .padding(.trailing, PopoverMetrics.gap)
             .padding(.top, 7)
             .padding(.bottom, 7)
     }
