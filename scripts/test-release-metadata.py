@@ -28,4 +28,15 @@ assert release_metadata.next_version((0, 3, 2), [commit("feat!: replace screensh
 release_metadata.validate_message("fix: repair update check\n")
 notes = release_metadata.render_release_notes("# Changelog\n\n## 0.4.0 — 2026-09-05\n\n- Add updater notes.\n", "0.4.0")
 assert "Add updater notes." in notes and "/releases/tag/v0.4.0" in notes and "/blob/v0.4.0/CHANGELOG.md" in notes
+
+original_git = release_metadata.git
+def fake_git(*args):
+    if args[0] == "log":
+        return "a" * 40 + "\x1eci: first\x1eci: first\n\x1f\n" + "b" * 40 + "\x1eci: second\x1eci: second\n\x1f"
+    return "scripts/release_metadata.py\n"
+release_metadata.git = fake_git
+try:
+    assert [entry.sha for entry in release_metadata.commits("v0.4.0..HEAD")] == ["a" * 40, "b" * 40]
+finally:
+    release_metadata.git = original_git
 print("release metadata checks passed")

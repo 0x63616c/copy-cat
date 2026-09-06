@@ -42,6 +42,7 @@ def commits(revision_range: str) -> list[Commit]:
         if not record.strip():
             continue
         sha, subject, body = record.split("\x1e", 2)
+        sha = sha.strip()
         match = CONVENTIONAL.match(subject)
         if not match or match["type"] not in ALLOWED_TYPES:
             raise ValueError(f"{sha[:8]}: use a Conventional Commit, got: {subject}")
