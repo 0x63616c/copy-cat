@@ -113,6 +113,23 @@ def render_changelog(version: str, entries: list[Commit], today: str) -> str:
     return text[:match.start()] + release + text[match.end():]
 
 
+def render_release_notes(changelog: str, version: str) -> str:
+    match = re.search(rf"^## {re.escape(version)} — .*?\n(?P<body>.*?)(?=^## |\Z)", changelog, re.MULTILINE | re.DOTALL)
+    if not match:
+        raise ValueError(f"CHANGELOG.md has no entry for {version}")
+    notes = match["body"].strip()
+    tag = f"v{version}"
+    return "\n".join((
+        f"# What's new in CopyCat {version}",
+        "",
+        notes,
+        "",
+        f"[View this release on GitHub](https://github.com/0x63616c/copy-cat/releases/tag/{tag})",
+        f"[View the full changelog](https://github.com/0x63616c/copy-cat/blob/{tag}/CHANGELOG.md)",
+        "",
+    ))
+
+
 def plan() -> tuple[str, tuple[int, int, int] | None, list[Commit]]:
     tag, tagged_version = latest_tag()
     current = source_version()
@@ -133,6 +150,9 @@ def main() -> int:
     plan_command.add_argument("--github-output", type=Path)
     prepare = subcommands.add_parser("prepare")
     prepare.add_argument("version")
+    notes = subcommands.add_parser("notes")
+    notes.add_argument("version")
+    notes.add_argument("output", type=Path)
     args = parser.parse_args()
 
     try:
@@ -143,6 +163,10 @@ def main() -> int:
         if args.command == "check-message":
             validate_message(args.message_file.read_text())
             print("Conventional Commit OK")
+            return 0
+        if args.command == "notes":
+            args.output.write_text(render_release_notes(CHANGELOG.read_text(), args.version))
+            print(f"Wrote release notes: {args.output}")
             return 0
         if args.command == "plan":
             tag, version, _ = plan()

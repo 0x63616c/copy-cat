@@ -57,6 +57,8 @@ A failed workflow does not mean a release exists. Inspect the failed step and re
 
 `./scripts/appcast.sh` packages the final signed app, generates and signs the feed with Sparkle 2.9.6, validates its version/URL/size and both Ed25519 signatures (including a tamper rejection check), and emits a checksum. CI reads the private key through standard input from `SPARKLE_PRIVATE_KEY`. For local signing it uses Keychain account `com.0x63616c.copy-cat.sparkle`; approve Keychain access for Sparkle’s signing tool if prompted.
 
+The same step derives `CopyCat-macOS.md` from the release's changelog section. Sparkle displays it in the update UI and it links to the GitHub Release and full versioned changelog. It is published beside the ZIP, has its own Ed25519 signature, and is referenced from the signed appcast; never edit it after feed generation.
+
 The app reads `https://github.com/0x63616c/copy-cat/releases/latest/download/appcast.xml`. Each feed points to its immutable version-specific ZIP. The feed is a release asset, so website deployments cannot overwrite it. Every future tag publishes the update automatically; do not edit signed feeds or replace published archives without regenerating signatures.
 
 Keep the private key backed up securely. To export it for a signing-machine transfer, use Sparkle’s `generate_keys --account com.0x63616c.copy-cat.sparkle -x <private-file>` and protect/remove the file after use. Never print it in logs, paste it into an issue, or change the bundled public key casually; installed apps rely on it.

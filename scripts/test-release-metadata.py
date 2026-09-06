@@ -26,4 +26,6 @@ assert release_metadata.next_version((0, 3, 2), [commit("fix: retain thumbnail p
 assert release_metadata.next_version((0, 3, 2), [commit("feat: add screenshot grouping")]) == (0, 4, 0)
 assert release_metadata.next_version((0, 3, 2), [commit("feat!: replace screenshot format")]) == (1, 0, 0)
 release_metadata.validate_message("fix: repair update check\n")
+notes = release_metadata.render_release_notes("# Changelog\n\n## 0.4.0 — 2026-09-05\n\n- Add updater notes.\n", "0.4.0")
+assert "Add updater notes." in notes and "/releases/tag/v0.4.0" in notes and "/blob/v0.4.0/CHANGELOG.md" in notes
 print("release metadata checks passed")

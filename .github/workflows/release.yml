@@ -75,7 +75,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: v${{ needs.metadata.outputs.version }}
         run: |
-          gh release create "$RELEASE_TAG" release-artifacts/CopyCat-macOS.zip release-artifacts/SHA256SUMS.txt release-artifacts/appcast.xml --verify-tag --title "CopyCat ${RELEASE_TAG#v}" --generate-notes
+          gh release create "$RELEASE_TAG" release-artifacts/CopyCat-macOS.zip release-artifacts/CopyCat-macOS.md release-artifacts/SHA256SUMS.txt release-artifacts/appcast.xml --verify-tag --title "CopyCat ${RELEASE_TAG#v}" --generate-notes
       - name: Verify published release
         env:
           GH_TOKEN: ${{ github.token }}
