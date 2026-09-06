@@ -84,7 +84,7 @@ jobs:
           mkdir -p /tmp/copy-cat-release
           gh release download "$RELEASE_TAG" --dir /tmp/copy-cat-release
           (cd /tmp/copy-cat-release && shasum -a 256 -c SHA256SUMS.txt)
-          python3 scripts/check-appcast.py /tmp/copy-cat-release/appcast.xml /tmp/copy-cat-release/CopyCat-macOS.zip "$VERSION"
+          python3 scripts/check-appcast.py /tmp/copy-cat-release/appcast.xml /tmp/copy-cat-release/CopyCat-macOS.zip /tmp/copy-cat-release/CopyCat-macOS.md "$VERSION"
           curl --fail --location --silent --show-error https://github.com/0x63616c/copy-cat/releases/latest/download/appcast.xml -o /tmp/copy-cat-release/latest-appcast.xml
           cmp /tmp/copy-cat-release/appcast.xml /tmp/copy-cat-release/latest-appcast.xml
       - name: Remove temporary signing credentials
